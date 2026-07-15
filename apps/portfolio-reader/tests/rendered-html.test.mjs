@@ -40,9 +40,16 @@ test("server-renders the portfolio research reader", async () => {
 
 test("ships a small index with lazy company and ownership chunks", async () => {
   const dataRoot = new URL("../dist/client/research-data/", import.meta.url);
-  const indexText = await readFile(new URL("index.json", dataRoot), "utf8");
+  const [indexText, headersText] = await Promise.all([
+    readFile(new URL("index.json", dataRoot), "utf8"),
+    readFile(new URL("../dist/client/_headers", import.meta.url), "utf8"),
+  ]);
 
   const index = JSON.parse(indexText);
+  assert.equal(
+    headersText.trim(),
+    "/research-data/companies/*\n  Cache-Control: public, max-age=31556952, immutable",
+  );
   assert.equal(index.meta.title, "Portfolio Research Reader");
   assert.equal(index.portfolio.mandate.status, "working");
   assert.ok(index.companies.length > 0);
