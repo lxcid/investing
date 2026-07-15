@@ -57,6 +57,8 @@ tasks:
 
   typecheck:
     command: ['pnpm', 'exec', 'tsc', '--noEmit']
+    deps:
+      - 'sync'
     inputs:
       - '@group(sources)'
 

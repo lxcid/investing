@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import generatedIndex from "../public/research-data/index.json";
 
 type NodeRow = {
   node_id: string;
@@ -202,6 +203,8 @@ type RepositoryIndex = {
   companies: CompanySummary[];
 };
 
+const repositoryIndex = generatedIndex as RepositoryIndex;
+
 type View = "portfolio" | "company" | "ownership";
 
 const numberFormat = new Intl.NumberFormat("en-SG");
@@ -246,7 +249,7 @@ function formatThousands(value: number | undefined, currency = "SGD") {
 }
 
 async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(url, { signal });
+  const response = await fetch(url, { signal, cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Could not load ${url} (${response.status})`);
   }
@@ -969,31 +972,16 @@ function OwnershipStudyContent({ company, ownership }: { company: Company; owner
 }
 
 export default function Home() {
-  const [data, setData] = useState<RepositoryIndex | null>(null);
+  const data = repositoryIndex;
   const [view, setView] = useState<View>("portfolio");
   const [selectedCompanyPath, setSelectedCompanyPath] = useState("");
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState("");
-  const [loading, setLoading] = useState("Loading the vault index…");
+  const [loading, setLoading] = useState("");
   const [error, setError] = useState("");
   const companyCache = useRef(new Map<string, Company>());
   const ownershipCache = useRef(new Map<string, OwnershipData>());
   const requestSequence = useRef(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchJson<RepositoryIndex>("/research-data/index.json", controller.signal)
-      .then((index) => {
-        setData(index);
-        setLoading("");
-      })
-      .catch((loadError: unknown) => {
-        if (controller.signal.aborted) return;
-        setError(loadError instanceof Error ? loadError.message : "Could not load the vault index.");
-        setLoading("");
-      });
-    return () => controller.abort();
-  }, []);
 
   const selectedDocument = selectedCompany
     ? selectedCompany.documents.find((document) => document.id === selectedDocumentId) ??
@@ -1074,11 +1062,9 @@ export default function Home() {
 
   const navigate = (nextView: View) => {
     if (nextView === "portfolio") {
-      if (data) {
-        requestSequence.current += 1;
-        setLoading("");
-        setError("");
-      }
+      requestSequence.current += 1;
+      setLoading("");
+      setError("");
       setView(nextView);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -1088,7 +1074,7 @@ export default function Home() {
       return;
     }
     const summary =
-      data?.companies.find((company) => company.path === selectedCompanyPath) ?? data?.companies[0];
+      data.companies.find((company) => company.path === selectedCompanyPath) ?? data.companies[0];
     if (summary) void openCompany(summary);
   };
 
@@ -1101,18 +1087,18 @@ export default function Home() {
         </button>
         <nav aria-label="Reader views">
           <button className={view === "portfolio" ? "active" : ""} onClick={() => navigate("portfolio")}>Portfolio</button>
-          <button className={view === "company" ? "active" : ""} disabled={!data?.companies.length} onClick={() => navigate("company")}>Company research</button>
+          <button className={view === "company" ? "active" : ""} disabled={!data.companies.length} onClick={() => navigate("company")}>Company research</button>
           <button className={view === "ownership" ? "active" : ""} disabled={!selectedCompany?.ownershipUrl} onClick={() => navigate("ownership")}>Ownership study</button>
         </nav>
-        <div className="repository-chip"><span className="live-dot" />Read-only · {data?.portfolio.mandate.baseCurrency ?? "Vault"}</div>
+        <div className="repository-chip"><span className="live-dot" />Read-only · {data.portfolio.mandate.baseCurrency}</div>
       </header>
 
       {error && <section className="empty-state" role="alert"><h1>Reader data unavailable</h1><p>{error}</p></section>}
       {!error && loading && <section className="empty-state" aria-live="polite"><h1>Reading the vault</h1><p>{loading}</p></section>}
-      {!error && !loading && data && view === "portfolio" && (
+      {!error && !loading && view === "portfolio" && (
         <PortfolioView data={data} companies={data.companies} onOpenCompany={(company) => void openCompany(company)} />
       )}
-      {!error && !loading && data && view === "company" && selectedCompany && selectedDocument && (
+      {!error && !loading && view === "company" && selectedCompany && selectedDocument && (
         <CompanyView
           portfolio={data.portfolio}
           company={selectedCompany}
