@@ -76,6 +76,7 @@ templates/                     Starting points for repeatable work
 schemas/                       Contracts for machine-readable records
 apps/
   portfolio-tools/             Moon/uv portfolio validation and analysis
+  portfolio-reader/            Moon/Node research-reading web application
 .agents/skills/                Narrow repository workflows, added when proven
 ```
 
@@ -106,17 +107,24 @@ should not replace the evidence rules or the investor's decision authority.
 
 ## Portfolio commands
 
-The repository pins Moon 2.4.3 and uv in `.prototools`. Moon orchestrates tasks;
-uv owns the Python version, project environment, dependencies, and committed
-lockfile. There is intentionally no root uv workspace; future applications can
-own independent toolchains behind the same Moon workspace.
+The repository pins Moon 2.4.3, Node.js 26, pnpm, and uv in `.prototools`. Moon
+orchestrates tasks; uv owns the Python project environment and lockfile, while
+the research-reading app owns its pnpm dependencies and lockfile. There is
+intentionally no root package or uv workspace.
 
 ```sh
 proto install
 moon run portfolio-tools:validate
 moon run portfolio-tools:test
 moon run portfolio-tools:summary
+moon run portfolio-reader:dev
+moon run portfolio-reader:test
 ```
+
+The web application is a read-only bridge to the research, not a competing
+system of record. Markdown, CSV, JSON, and preserved source documents remain
+authoritative. The app may improve navigation and comprehension, but it must
+not silently write research or convert signals into portfolio decisions.
 
 Validation reads the base currency from `portfolio/mandate.md`; there is no
 independent command default. `validate` accepts factual holdings and cash under

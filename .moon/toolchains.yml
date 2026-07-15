@@ -1,0 +1,8 @@
+$schema: 'https://moonrepo.dev/schemas/toolchains.json'
+
+javascript:
+  packageManager: pnpm
+
+node: {}
+
+pnpm: {}

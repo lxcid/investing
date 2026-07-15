@@ -1,0 +1,74 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: portfolio-reader
+language: typescript
+layer: application
+stack: frontend
+
+project:
+  description: Read-only bridge from evidence-backed investment research to the investor.
+
+fileGroups:
+  sources:
+    - 'app/**/*'
+    - 'build/**/*'
+    - 'public/**/*'
+    - 'scripts/**/*'
+    - 'tests/**/*'
+    - 'worker/**/*'
+    - '*.config.{js,mjs,ts}'
+    - 'next.config.ts'
+    - 'package.json'
+    - 'pnpm-lock.yaml'
+    - 'pnpm-workspace.yaml'
+    - 'tsconfig.json'
+    - 'vite.config.ts'
+  research:
+    - '/portfolio/**/*'
+    - '/companies/**/*'
+
+tasks:
+  sync:
+    command: ['pnpm', 'run', 'sync:data']
+    inputs:
+      - '@group(research)'
+      - 'scripts/sync-research-data.mjs'
+    outputs:
+      - 'app/data/repository.json'
+    options:
+      cache: false
+
+  dev:
+    command: ['pnpm', 'run', 'dev']
+    inputs:
+      - '@group(sources)'
+      - '@group(research)'
+    options:
+      cache: false
+      persistent: true
+
+  build:
+    command: ['pnpm', 'run', 'build']
+    inputs:
+      - '@group(sources)'
+      - '@group(research)'
+    outputs:
+      - 'dist/**/*'
+
+  typecheck:
+    command: ['pnpm', 'exec', 'tsc', '--noEmit']
+    inputs:
+      - '@group(sources)'
+
+  lint:
+    command: ['pnpm', 'run', 'lint']
+    inputs:
+      - '@group(sources)'
+
+  test:
+    command: ['pnpm', 'test']
+    inputs:
+      - '@group(sources)'
+      - '@group(research)'
+    options:
+      cache: false
