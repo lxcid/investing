@@ -258,15 +258,30 @@ main { min-height: 100vh; overflow: hidden; }
 .document-head code { color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: 8px; line-height: 1.5; max-width: 250px; overflow-wrap: anywhere; text-align: right; }
 .document-summary { color: #3f5148; font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.55; margin: 31px 0 44px; }
 .markdown-body { color: #34473e; font-size: 13px; line-height: 1.75; }
-.markdown-body h2, .markdown-body h3, .markdown-body h4 { color: var(--ink); font-weight: 600; letter-spacing: -0.035em; line-height: 1.15; margin: 42px 0 15px; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { color: var(--ink); font-weight: 600; letter-spacing: -0.035em; line-height: 1.15; margin: 42px 0 15px; scroll-margin-top: 24px; }
+.markdown-body h1 { font-size: 34px; }
 .markdown-body h2 { font-size: 29px; }
 .markdown-body h3 { font-size: 23px; }
 .markdown-body h4 { font-size: 17px; }
+.markdown-body h5, .markdown-body h6 { font-size: 14px; }
 .markdown-body p { margin: 0 0 18px; }
-.markdown-body ul { margin: 0 0 24px; padding-left: 20px; }
+.markdown-body ul, .markdown-body ol { margin: 0 0 24px; padding-left: 20px; }
 .markdown-body li { margin-bottom: 9px; padding-left: 4px; }
 .markdown-body a { color: var(--green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.markdown-body code { background: var(--paper-deep); border-radius: 2px; font-family: var(--font-geist-mono), monospace; font-size: 0.9em; padding: 2px 4px; }
+.markdown-body pre { background: var(--ink); color: #dce8e2; line-height: 1.6; margin: 24px 0; overflow-x: auto; padding: 18px 20px; }
+.markdown-body pre code { background: transparent; color: inherit; padding: 0; }
+.markdown-body hr { border: 0; border-top: 1px solid var(--line); margin: 34px 0; }
+.markdown-body del { color: var(--muted); }
+.markdown-body .contains-task-list { list-style: none; padding-left: 0; }
+.markdown-body .task-list-item { align-items: start; display: flex; gap: 7px; padding-left: 0; }
+.markdown-body .task-list-item input { accent-color: var(--green); margin-top: 5px; }
+.wiki-link { background: rgba(20, 122, 74, 0.08); border: 0; border-radius: 2px; color: var(--green); cursor: pointer; display: inline; font: inherit; padding: 1px 3px; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.wiki-link:hover { background: rgba(20, 122, 74, 0.14); }
+.wiki-link-unresolved { background: transparent; color: var(--muted); cursor: help; text-decoration-style: dotted; }
+.wiki-embed { border-left: 2px solid var(--green); display: inline-block; margin: 2px 0; padding: 4px 7px; text-decoration: none; }
 .research-callout { background: var(--paper-deep); border-left: 3px solid var(--green); color: #3f5148; font-size: 12px; line-height: 1.65; margin: 22px 0; padding: 17px 19px; }
+.research-callout p:last-child { margin-bottom: 0; }
 .markdown-table-wrap { border: 1px solid var(--line); margin: 24px 0 30px; overflow-x: auto; }
 .markdown-table { border-collapse: collapse; min-width: 680px; width: 100%; }
 .markdown-table th, .markdown-table td { border-bottom: 1px solid var(--line); padding: 11px 12px; text-align: left; vertical-align: top; }

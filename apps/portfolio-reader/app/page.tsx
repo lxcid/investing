@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import generatedIndex from "./generated/repository-index.json";
+import { MarkdownReader, type MarkdownDocument } from "./markdown-reader";
 
 type NodeRow = {
   node_id: string;
@@ -103,16 +104,7 @@ type OwnershipData = {
   groupSeries: SeriesRow[];
 };
 
-type ResearchDocument = {
-  id: string;
-  path: string;
-  relativePath: string;
-  kind: string;
-  title: string;
-  summary: string;
-  attributes: Record<string, string | number | boolean | string[]>;
-  body: string;
-};
+type ResearchDocument = MarkdownDocument;
 
 type SourceFile = {
   path: string;
@@ -255,169 +247,6 @@ async function fetchChunkJson<T>(url: string): Promise<T> {
     throw new Error(`Could not load ${url} (${response.status})`);
   }
   return response.json() as Promise<T>;
-}
-
-function cleanInlineText(value: string) {
-  return value
-    .replace(/!\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g, (_, target, label) =>
-      label ?? `Embedded: ${String(target).split("/").at(-1)}`,
-    )
-    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2")
-    .replace(
-      /\[\[([^\]]+)\]\]/g,
-      (_, target) => String(target).split("/").at(-1) ?? String(target),
-    )
-    .replace(/\*\*/g, "")
-    .replace(/__([^_]+)__/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .trim();
-}
-
-function InlineText({ value }: { value: string }) {
-  const pattern = /(\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
-  const parts = value.split(pattern);
-  return (
-    <>
-      {parts.map((part, index) => {
-        const link = part.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
-        if (link) {
-          return (
-            <a href={link[2]} key={`${link[2]}-${index}`} target="_blank" rel="noreferrer">
-              {cleanInlineText(link[1])} ↗
-            </a>
-          );
-        }
-        return <Fragment key={`${part}-${index}`}>{cleanInlineText(part)}</Fragment>;
-      })}
-    </>
-  );
-}
-
-function MarkdownReader({ body }: { body: string }) {
-  const lines = body.split("\n");
-  const blocks = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    const line = lines[index];
-    if (!line.trim()) {
-      index += 1;
-      continue;
-    }
-
-    const heading = line.match(/^(#{1,3})\s+(.+)$/);
-    if (heading) {
-      const level = heading[1].length;
-      if (level > 1 || index !== 0) {
-        const Heading = level === 2 ? "h3" : level === 3 ? "h4" : "h2";
-        blocks.push(
-          <Heading key={`heading-${index}`}>
-            <InlineText value={heading[2]} />
-          </Heading>,
-        );
-      }
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith(">")) {
-      const quote = [];
-      while (index < lines.length && lines[index].startsWith(">")) {
-        quote.push(lines[index].replace(/^>\s?/, "").replace(/^\[![^\]]+\]\s*/, ""));
-        index += 1;
-      }
-      blocks.push(
-        <aside className="research-callout" key={`quote-${index}`}>
-          <InlineText value={quote.join(" ")} />
-        </aside>,
-      );
-      continue;
-    }
-
-    if (/^[-*]\s+/.test(line)) {
-      const items = [];
-      while (index < lines.length && lines[index].trim()) {
-        if (/^[-*]\s+/.test(lines[index])) {
-          items.push(lines[index].replace(/^[-*]\s+/, ""));
-        } else if (items.length && !/^(#{1,3})\s+/.test(lines[index])) {
-          items[items.length - 1] += ` ${lines[index].trim()}`;
-        } else {
-          break;
-        }
-        index += 1;
-      }
-      blocks.push(
-        <ul key={`list-${index}`}>
-          {items.map((item, itemIndex) => (
-            <li key={`${item}-${itemIndex}`}>
-              <InlineText value={item} />
-            </li>
-          ))}
-        </ul>,
-      );
-      continue;
-    }
-
-    if (line.trim().startsWith("|")) {
-      const rows = [];
-      while (index < lines.length && lines[index].trim().startsWith("|")) {
-        rows.push(
-          lines[index]
-            .trim()
-            .replace(/^\||\|$/g, "")
-            .split("|")
-            .map((cell) => cell.trim()),
-        );
-        index += 1;
-      }
-      const visibleRows = rows.filter(
-        (row) => !row.every((cell) => /^:?-{3,}:?$/.test(cell)),
-      );
-      const [header = [], ...bodyRows] = visibleRows;
-      blocks.push(
-        <div className="markdown-table-wrap" key={`table-${index}`}>
-          <table className="markdown-table">
-            <thead>
-              <tr>
-                {header.map((cell, cellIndex) => (
-                  <th key={`${cell}-${cellIndex}`}><InlineText value={cell} /></th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {bodyRows.map((row, rowIndex) => (
-                <tr key={`row-${rowIndex}`}>
-                  {row.map((cell, cellIndex) => (
-                    <td key={`${cell}-${cellIndex}`}><InlineText value={cell} /></td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>,
-      );
-      continue;
-    }
-
-    const paragraph = [line.trim()];
-    index += 1;
-    while (
-      index < lines.length &&
-      lines[index].trim() &&
-      !/^(#{1,3})\s+/.test(lines[index]) &&
-      !/^[-*]\s+/.test(lines[index]) &&
-      !lines[index].startsWith(">") &&
-      !lines[index].trim().startsWith("|")
-    ) {
-      paragraph.push(lines[index].trim());
-      index += 1;
-    }
-    blocks.push(
-      <p key={`paragraph-${index}`}><InlineText value={paragraph.join(" ")} /></p>,
-    );
-  }
-
-  return <div className="markdown-body">{blocks}</div>;
 }
 
 function OwnershipChart({
@@ -751,7 +580,12 @@ function CompanyView({
             <code>{selectedDocument.path}</code>
           </div>
           <p className="document-summary">{selectedDocument.summary}</p>
-          <MarkdownReader body={selectedDocument.body} />
+          <MarkdownReader
+            body={selectedDocument.body}
+            currentDocument={selectedDocument}
+            documents={company.documents}
+            onSelectDocument={onSelectDocument}
+          />
         </article>
 
         <aside className="evidence-rail">
