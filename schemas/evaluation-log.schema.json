@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portfolio evaluation log record",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "date",
+    "company_path",
+    "artifact",
+    "task",
+    "useful",
+    "new_insight",
+    "evidence_correct",
+    "time_saved_minutes",
+    "action",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "company_path": {
+      "type": ["string", "null"],
+      "pattern": "^companies/[^/]+/[^/]+$"
+    },
+    "artifact": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonical repository-relative path to an existing artifact"
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "useful": {
+      "type": "boolean"
+    },
+    "new_insight": {
+      "type": "boolean"
+    },
+    "evidence_correct": {
+      "type": "boolean"
+    },
+    "time_saved_minutes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

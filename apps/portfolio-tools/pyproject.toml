@@ -1,0 +1,25 @@
+[project]
+name = "investing-portfolio-tools"
+version = "0.1.0"
+description = "Validation and derived analysis for the investment portfolio repository"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "jsonschema>=4.25,<5",
+    "pyyaml>=6.0.2,<7",
+]
+
+[project.scripts]
+portfolio-tools = "investing_portfolio_tools.portfolio_summary:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4,<9",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
