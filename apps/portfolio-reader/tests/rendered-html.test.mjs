@@ -96,39 +96,3 @@ test("ships a small index with lazy company and ownership chunks", async () => {
   await assert.rejects(access(new URL("../app/data/repository.json", import.meta.url)));
   await assert.rejects(access(new URL("../app/_sites-preview", import.meta.url)));
 });
-
-test("serves content-addressed research chunks as immutable assets", async () => {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("chunk-test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-  const chunkPath =
-    "/research-data/companies/SGX/EXAMPLE_Company/profile.0123456789abcdef.json";
-  let assetRequested = false;
-
-  const response = await worker.fetch(
-    new Request(`http://localhost${chunkPath}`),
-    {
-      ASSETS: {
-        fetch: async (request) => {
-          assetRequested = true;
-          assert.equal(new URL(request.url).pathname, chunkPath);
-          return new Response("{}", {
-            headers: {
-              "cache-control": "public, max-age=0, must-revalidate",
-              "content-type": "application/json",
-            },
-          });
-        },
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
-
-  assert.equal(assetRequested, true);
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get("cache-control"), "public, max-age=31556952, immutable");
-  assert.equal(await response.text(), "{}");
-});

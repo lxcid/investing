@@ -21,9 +21,6 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
-const immutableResearchChunk =
-  /^\/research-data\/companies\/.+\/(?:profile|ownership)\.[a-f0-9]{16}\.json$/;
-
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -33,18 +30,6 @@ const immutableResearchChunk =
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-
-    if (immutableResearchChunk.test(url.pathname)) {
-      const response = await env.ASSETS.fetch(request);
-      if (!response.ok) return response;
-      const headers = new Headers(response.headers);
-      headers.set("Cache-Control", "public, max-age=31556952, immutable");
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-      });
-    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
