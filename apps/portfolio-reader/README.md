@@ -27,8 +27,8 @@ moon run portfolio-reader:dev
 ```
 
 Moon pins Node.js 26 and pnpm for reproducible local execution. The `predev` and
-`prebuild` hooks regenerate `app/data/repository.json` from `portfolio/` and
-`companies/`. Use `moon run portfolio-reader:sync` to refresh only the reader.
+`prebuild` hooks regenerate `app/data/repository.json` from `vault/portfolio/` and
+`vault/companies/`. Use `moon run portfolio-reader:sync` to refresh only the reader.
 
 ## Validation
 

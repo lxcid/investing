@@ -26,7 +26,7 @@ Current thesis version:
 
 ## Evidence
 
-- [[companies/EXCHANGE/TICKER_NAME/sources/document.pdf#page=X|Document, p. X]]
+- [[vault/companies/EXCHANGE/TICKER_NAME/sources/document.pdf#page=X|Document, p. X]]
 
 ## Portfolio context
 

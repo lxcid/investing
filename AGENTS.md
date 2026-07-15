@@ -21,22 +21,23 @@ Do not represent a proposal as an executed decision.
 
 ## Sources of truth
 
-- `portfolio/mandate.md` is authoritative for objectives, constraints, risk,
-  cadence, and decision rights.
-- `portfolio/holdings.csv` and `portfolio/cash.csv` are authoritative for current
-  owned positions and cash. Never infer ownership from a watchlist or thesis.
+- `vault/portfolio/mandate.md` is authoritative for objectives, constraints,
+  risk, cadence, and decision rights.
+- `vault/portfolio/holdings.csv` and `vault/portfolio/cash.csv` are authoritative
+  for current owned positions and cash. Never infer ownership from a watchlist
+  or thesis.
 - A company `index.md` is authoritative for identity, listing quote currency
   (`currency`), `research_status`, and `portfolio_status`. The listing currency
   must match `price_currency` in holdings; analyze reporting and underlying
   business currencies separately.
-- `portfolio/watchlist.csv` owns review scheduling and the reason for tracking;
+- `vault/portfolio/watchlist.csv` owns review scheduling and the reason for tracking;
   it must not duplicate company identity or status fields.
-- `portfolio/decisions.md` is an append-only decision record.
-- `portfolio/evaluation-log.jsonl` is the typed append-only evaluation record;
-  `schemas/evaluation-log.schema.json` is its versioned contract.
+- `vault/portfolio/decisions.md` is an append-only decision record.
+- `vault/portfolio/evaluation-log.jsonl` is the typed append-only evaluation
+  record; `vault/schemas/evaluation-log.schema.json` is its versioned contract.
 
-Use `companies/<exchange>/<ticker>_<short-name>` as `company_path` in portfolio
-tables and logs. Ticker alone is not a valid cross-market identifier.
+Use `vault/companies/<exchange>/<ticker>_<short-name>` as `company_path` in
+portfolio tables and logs. Ticker alone is not a valid cross-market identifier.
 
 Allowed status values are:
 
@@ -60,8 +61,8 @@ comparisons, recommendations, or other portfolio analysis.
 - Classify important statements as one of: **reported fact**, **calculated
   metric**, **management claim**, **agent inference**, or **investor judgment**.
 - Cite material claims to a local source and page or section when available. Use
-  a vault-relative Obsidian link such as
-  `[[companies/SGX/D05_DBS/sources/annual-reports/fy2025.pdf#page=84|FY2025 annual report, p. 84]]`.
+  a repository-relative Obsidian link such as
+  `[[vault/companies/SGX/D05_DBS/sources/annual-reports/fy2025.pdf#page=84|FY2025 annual report, p. 84]]`.
 - State when evidence is absent, ambiguous, stale, or contradictory. Never fill
   gaps with invented values.
 - Put repeatable arithmetic in a script or financial model. Include the input
@@ -77,7 +78,7 @@ comparisons, recommendations, or other portfolio analysis.
 `thesis.md` is a maintained decision artifact, not an automatically regenerated
 summary. Give each deliberate thesis review a version such as `2026-07-15-v1`
 and record it in the file frontmatter. A new filing or announcement should first
-produce a review based on `templates/review-update.md`.
+produce a review based on `vault/templates/review-update.md`.
 
 Change a thesis only when asked to perform a deliberate thesis review. Update
 the version, append a dated explanation of the evidence and rationale, and
@@ -90,7 +91,7 @@ merely producing another bullish or bearish summary.
 
 ## Default workflow
 
-1. Read `portfolio/mandate.md` for any portfolio or decision-related task.
+1. Read `vault/portfolio/mandate.md` for any portfolio or decision-related task.
 2. Read the company `index.md`, `thesis.md`, `valuation.md`, open questions, and
    existing analysis.
 3. Inventory relevant local sources and identify missing reporting periods.
@@ -107,10 +108,10 @@ questions, and test assumptions with cited evidence.
 
 ## Repository conventions
 
-- Exchanges are first-level directories below `companies/`. Company directories
-  use `companies/<exchange>/<ticker>_<short-name>`, for example
-  `companies/SGX/D05_DBS`. The short-name suffix must be non-empty; exchange and
-  ticker identify the listing and must be unique together.
+- Exchanges are first-level directories below `vault/companies/`. Company
+  directories use `vault/companies/<exchange>/<ticker>_<short-name>`, for
+  example `vault/companies/SGX/D05_DBS`. The short-name suffix must be non-empty;
+  exchange and ticker identify the listing and must be unique together.
 - Use ISO dates (`YYYY-MM-DD`) and state the currency and units beside figures.
 - Write GitHub-Flavored Markdown. In vault research notes, use Obsidian
   `[[wiki links]]` for internal references and `![[embeds]]` when transclusion
@@ -168,7 +169,7 @@ Use Conventional Commits. Software changes use `feat`, `fix`, `refactor`,
 Add material trailers when applicable:
 
 ```text
-Company-Path: companies/SGX/D05_DBS
+Company-Path: vault/companies/SGX/D05_DBS
 Thesis-Version: 2026-07-15-v1
 Thesis-Commit: <commit>
 Decision-Authority: investor

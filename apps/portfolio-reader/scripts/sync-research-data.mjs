@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(appRoot, "../..");
-const companiesRoot = path.join(repoRoot, "companies");
+const vaultRoot = path.join(repoRoot, "vault");
+const portfolioRoot = path.join(vaultRoot, "portfolio");
+const companiesRoot = path.join(vaultRoot, "companies");
 
 function coerce(value) {
   if (value === "") return null;
@@ -290,12 +292,12 @@ async function readCompanies() {
   );
 }
 
-const mandateText = await readFile(path.join(repoRoot, "portfolio/mandate.md"), "utf8");
+const mandateText = await readFile(path.join(portfolioRoot, "mandate.md"), "utf8");
 const mandate = parseFrontmatter(mandateText);
 const [holdings, cash, watchlist, companies] = await Promise.all([
-  readCsv(path.join(repoRoot, "portfolio/holdings.csv")),
-  readCsv(path.join(repoRoot, "portfolio/cash.csv")),
-  readCsv(path.join(repoRoot, "portfolio/watchlist.csv")),
+  readCsv(path.join(portfolioRoot, "holdings.csv")),
+  readCsv(path.join(portfolioRoot, "cash.csv")),
+  readCsv(path.join(portfolioRoot, "watchlist.csv")),
   readCompanies(),
 ]);
 
@@ -312,7 +314,7 @@ const payload = {
   meta: {
     title: "Portfolio Research Reader",
     researchCutoff: datedValues.sort().at(-1) ?? null,
-    generatedFrom: ["portfolio", "companies"],
+    generatedFrom: ["vault/portfolio", "vault/companies"],
   },
   portfolio: {
     mandate: {
@@ -321,7 +323,7 @@ const payload = {
       updated: mandate.attributes.mandate_updated,
       summary: summarizeMarkdown(mandate.body),
       body: mandate.body,
-      path: "portfolio/mandate.md",
+      path: "vault/portfolio/mandate.md",
     },
     holdings,
     cash,

@@ -24,8 +24,8 @@ fileGroups:
     - 'tsconfig.json'
     - 'vite.config.ts'
   research:
-    - '/portfolio/**/*'
-    - '/companies/**/*'
+    - '/vault/portfolio/**/*'
+    - '/vault/companies/**/*'
 
 tasks:
   sync:

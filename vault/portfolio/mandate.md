@@ -61,7 +61,7 @@ before derived portfolio analysis, opportunity comparisons, or recommendations.
 - `portfolio_status: holding` records actual ownership, not research approval.
   Existing holdings may be recorded before valuation is complete.
 - A proposed action is not a holding until the investor confirms it and
-  `portfolio/holdings.csv` is updated.
+  `vault/portfolio/holdings.csv` is updated.
 
 ## Investor details still to confirm
 

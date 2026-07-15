@@ -19,8 +19,8 @@ from investing_portfolio_tools.portfolio_summary import (
 )
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
-SCHEMA_SOURCE = WORKSPACE_ROOT / "schemas" / "evaluation-log.schema.json"
-COMPANY_PATH = "companies/SGX/AAA_Test"
+SCHEMA_SOURCE = WORKSPACE_ROOT / "vault" / "schemas" / "evaluation-log.schema.json"
+COMPANY_PATH = "vault/companies/SGX/AAA_Test"
 
 
 def write_csv(path: Path, fields: list[str], rows: list[dict[str, str]]) -> None:
@@ -32,8 +32,8 @@ def write_csv(path: Path, fields: list[str], rows: list[dict[str, str]]) -> None
 
 
 def write_mandate(root: Path, *, status: str = "confirmed", base: str = "SGD") -> None:
-    (root / "portfolio").mkdir(parents=True, exist_ok=True)
-    (root / "portfolio" / "mandate.md").write_text(
+    (root / "vault" / "portfolio").mkdir(parents=True, exist_ok=True)
+    (root / "vault" / "portfolio" / "mandate.md").write_text(
         f"---\nstatus: {status}\nbase_currency: {base}\n---\n\n# Mandate\n",
         encoding="utf-8",
     )
@@ -143,23 +143,27 @@ def setup_repo(
         root, portfolio_status=company_status, currency=company_currency
     )
     write_csv(
-        root / "portfolio" / "holdings.csv",
+        root / "vault" / "portfolio" / "holdings.csv",
         HOLDING_FIELDS,
         [holding_row()] if holdings is None else holdings,
     )
     write_csv(
-        root / "portfolio" / "cash.csv",
+        root / "vault" / "portfolio" / "cash.csv",
         CASH_FIELDS,
         [] if cash is None else cash,
     )
     write_csv(
-        root / "portfolio" / "watchlist.csv",
+        root / "vault" / "portfolio" / "watchlist.csv",
         WATCHLIST_FIELDS,
         [] if watchlist is None else watchlist,
     )
-    (root / "portfolio" / "evaluation-log.jsonl").write_text("", encoding="utf-8")
-    (root / "schemas").mkdir(parents=True, exist_ok=True)
-    shutil.copy(SCHEMA_SOURCE, root / "schemas" / "evaluation-log.schema.json")
+    (root / "vault" / "portfolio" / "evaluation-log.jsonl").write_text(
+        "", encoding="utf-8"
+    )
+    (root / "vault" / "schemas").mkdir(parents=True, exist_ok=True)
+    shutil.copy(
+        SCHEMA_SOURCE, root / "vault" / "schemas" / "evaluation-log.schema.json"
+    )
 
 
 def test_empty_working_portfolio_is_valid(tmp_path: Path) -> None:
@@ -228,7 +232,7 @@ def test_rejects_duplicate_holdings(tmp_path: Path) -> None:
 
 
 def test_rejects_duplicate_listing_identity(tmp_path: Path) -> None:
-    duplicate_path = "companies/SGX/AAA_Duplicate"
+    duplicate_path = "vault/companies/SGX/AAA_Duplicate"
     setup_repo(
         tmp_path,
         holdings=[holding_row(), holding_row(company_path=duplicate_path)],
@@ -243,7 +247,7 @@ def test_rejects_company_path_without_short_name(tmp_path: Path) -> None:
     setup_repo(tmp_path)
     write_company(
         tmp_path,
-        company_path="companies/SGX/AAA",
+        company_path="vault/companies/SGX/AAA",
         portfolio_status="none",
     )
 
@@ -255,7 +259,7 @@ def test_rejects_blank_ticker(tmp_path: Path) -> None:
     setup_repo(tmp_path)
     write_company(
         tmp_path,
-        company_path="companies/SGX/_BlankTicker",
+        company_path="vault/companies/SGX/_BlankTicker",
         ticker="",
         portfolio_status="none",
     )
@@ -287,7 +291,7 @@ def test_rejects_non_positive_fx(tmp_path: Path) -> None:
 def test_rejects_missing_company_path(tmp_path: Path) -> None:
     setup_repo(
         tmp_path,
-        holdings=[holding_row(company_path="companies/SGX/ZZZ_Missing")],
+        holdings=[holding_row(company_path="vault/companies/SGX/ZZZ_Missing")],
     )
 
     with pytest.raises(PortfolioValidationError, match="does not exist"):
@@ -501,7 +505,7 @@ def test_rejects_future_watchlist_added_date(tmp_path: Path) -> None:
 def test_rejects_invalid_evaluation_record(tmp_path: Path) -> None:
     setup_repo(tmp_path)
     record = evaluation_record(useful="yes")
-    (tmp_path / "portfolio" / "evaluation-log.jsonl").write_text(
+    (tmp_path / "vault" / "portfolio" / "evaluation-log.jsonl").write_text(
         json.dumps(record) + "\n", encoding="utf-8"
     )
 
@@ -511,7 +515,7 @@ def test_rejects_invalid_evaluation_record(tmp_path: Path) -> None:
 
 def test_rejects_invalid_evaluation_schema_without_traceback(tmp_path: Path) -> None:
     setup_repo(tmp_path)
-    schema_path = tmp_path / "schemas" / "evaluation-log.schema.json"
+    schema_path = tmp_path / "vault" / "schemas" / "evaluation-log.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     schema["type"] = "invalid-type"
     schema_path.write_text(json.dumps(schema), encoding="utf-8")
@@ -525,7 +529,7 @@ def test_rejects_future_evaluation_record(tmp_path: Path) -> None:
     artifact = tmp_path / "analysis" / "test.md"
     artifact.parent.mkdir(parents=True)
     artifact.write_text("# Test analysis\n", encoding="utf-8")
-    (tmp_path / "portfolio" / "evaluation-log.jsonl").write_text(
+    (tmp_path / "vault" / "portfolio" / "evaluation-log.jsonl").write_text(
         json.dumps(evaluation_record(date="2026-07-20")) + "\n",
         encoding="utf-8",
     )
@@ -542,7 +546,7 @@ def test_accepts_evaluation_record_with_existing_artifact(tmp_path: Path) -> Non
     artifact = tmp_path / "analysis" / "test.md"
     artifact.parent.mkdir(parents=True)
     artifact.write_text("# Test analysis\n", encoding="utf-8")
-    (tmp_path / "portfolio" / "evaluation-log.jsonl").write_text(
+    (tmp_path / "vault" / "portfolio" / "evaluation-log.jsonl").write_text(
         json.dumps(evaluation_record()) + "\n", encoding="utf-8"
     )
 
@@ -553,7 +557,7 @@ def test_accepts_evaluation_record_with_existing_artifact(tmp_path: Path) -> Non
 
 def test_rejects_missing_evaluation_artifact(tmp_path: Path) -> None:
     setup_repo(tmp_path)
-    (tmp_path / "portfolio" / "evaluation-log.jsonl").write_text(
+    (tmp_path / "vault" / "portfolio" / "evaluation-log.jsonl").write_text(
         json.dumps(evaluation_record()) + "\n", encoding="utf-8"
     )
 
@@ -563,7 +567,7 @@ def test_rejects_missing_evaluation_artifact(tmp_path: Path) -> None:
 
 def test_rejects_traversal_evaluation_artifact(tmp_path: Path) -> None:
     setup_repo(tmp_path)
-    (tmp_path / "portfolio" / "evaluation-log.jsonl").write_text(
+    (tmp_path / "vault" / "portfolio" / "evaluation-log.jsonl").write_text(
         json.dumps(evaluation_record(artifact="../../missing.md")) + "\n",
         encoding="utf-8",
     )

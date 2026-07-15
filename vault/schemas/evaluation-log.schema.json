@@ -26,7 +26,7 @@
     },
     "company_path": {
       "type": ["string", "null"],
-      "pattern": "^companies/[^/]+/[^/]+$"
+      "pattern": "^vault/companies/[^/]+/[^/]+$"
     },
     "artifact": {
       "type": "string",

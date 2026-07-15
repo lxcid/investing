@@ -1,5 +1,5 @@
 {
-  "company_path": "companies/SGX/BSL_Raffles-Medical-Group",
+  "company_path": "vault/companies/SGX/BSL_Raffles-Medical-Group",
   "period_end": "2025-12-31",
   "currency": "SGD",
   "monetary_units": "thousands",
@@ -90,9 +90,9 @@
     "founder_total_interest_pct_as_of_2026_05_18": 56.313
   },
   "sources": {
-    "audited_annual_report": "companies/SGX/BSL_Raffles-Medical-Group/sources/annual-reports/fy2025.pdf",
-    "fy2025_results": "companies/SGX/BSL_Raffles-Medical-Group/sources/results/fy2025-condensed-financial-statements.pdf",
-    "founder_interest": "companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-05-19-director-interest-loo-choon-yong.pdf",
-    "agm_minutes": "companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-05-13-minutes-2026-agm.pdf"
+    "audited_annual_report": "vault/companies/SGX/BSL_Raffles-Medical-Group/sources/annual-reports/fy2025.pdf",
+    "fy2025_results": "vault/companies/SGX/BSL_Raffles-Medical-Group/sources/results/fy2025-condensed-financial-statements.pdf",
+    "founder_interest": "vault/companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-05-19-director-interest-loo-choon-yong.pdf",
+    "agm_minutes": "vault/companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-05-13-minutes-2026-agm.pdf"
   }
 }

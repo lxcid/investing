@@ -70,8 +70,8 @@ Distinguish a discounted security from a deteriorating business.
 
 For each new result or announcement, determine what changed and whether it
 affects the thesis, valuation, margin of safety, distributions when applicable,
-or required action. Use `templates/review-update.md`; do not rewrite the thesis
-for routine noise.
+or required action. Use `vault/templates/review-update.md`; do not rewrite the
+thesis for routine noise.
 
 ### 5. Portfolio analysis
 
@@ -86,12 +86,12 @@ holding.
 ## Experiment log
 
 Record every substantive agent-assisted review in
-`portfolio/evaluation-log.jsonl`. Each line must satisfy
-`schemas/evaluation-log.schema.json`; validate it with
+`vault/portfolio/evaluation-log.jsonl`. Each line must satisfy
+`vault/schemas/evaluation-log.schema.json`; validate it with
 `moon run portfolio-tools:validate`. Judge factual and citation accuracy, new
 insight, decision relevance, consistency, time saved, and follow-up action.
 After 20-30 entries, create a dated retrospective workflow review under
-`portfolio/evaluation-reviews/`. Assess false confidence and missed material
+`vault/portfolio/evaluation-reviews/`. Assess false confidence and missed material
 facts using evidence that became available after the original reviews. Do not
 fill retrospective fields at intake.
 
