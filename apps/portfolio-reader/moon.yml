@@ -34,7 +34,7 @@ tasks:
       - '@group(research)'
       - 'scripts/sync-research-data.mjs'
     outputs:
-      - 'app/data/repository.json'
+      - 'public/research-data/**/*'
     options:
       cache: false
 

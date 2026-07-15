@@ -1,4 +1,4 @@
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,8 @@ const repoRoot = path.resolve(appRoot, "../..");
 const vaultRoot = path.join(repoRoot, "vault");
 const portfolioRoot = path.join(vaultRoot, "portfolio");
 const companiesRoot = path.join(vaultRoot, "companies");
+const generatedRoot = path.join(appRoot, "public", "research-data");
+const temporaryRoot = path.join(appRoot, "public", `.research-data-${process.pid}`);
 
 function coerce(value) {
   if (value === "") return null;
@@ -292,6 +294,11 @@ async function readCompanies() {
   );
 }
 
+async function writeJson(absolutePath, value) {
+  await mkdir(path.dirname(absolutePath), { recursive: true });
+  await writeFile(absolutePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
 const mandateText = await readFile(path.join(portfolioRoot, "mandate.md"), "utf8");
 const mandate = parseFrontmatter(mandateText);
 const [holdings, cash, watchlist, companies] = await Promise.all([
@@ -310,7 +317,44 @@ const datedValues = [
   ]),
 ].filter(Boolean);
 
-const payload = {
+await rm(temporaryRoot, { recursive: true, force: true });
+await mkdir(temporaryRoot, { recursive: true });
+
+const companyIndex = [];
+for (const company of companies) {
+  const companyPathParts = company.path.split("/");
+  if (
+    companyPathParts.length !== 4 ||
+    companyPathParts[0] !== "vault" ||
+    companyPathParts[1] !== "companies"
+  ) {
+    throw new Error(`Invalid canonical company path: ${company.path}`);
+  }
+  const [, , exchange, directory] = companyPathParts;
+  const chunkDirectory = path.join(temporaryRoot, "companies", exchange, directory);
+  const encodedBase = `/research-data/companies/${encodeURIComponent(exchange)}/${encodeURIComponent(directory)}`;
+  const { documents, sources, ownership, financials, ...summary } = company;
+
+  await writeJson(path.join(chunkDirectory, "profile.json"), {
+    path: company.path,
+    financials,
+    documents,
+    sources,
+  });
+  if (ownership) {
+    await writeJson(path.join(chunkDirectory, "ownership.json"), ownership);
+  }
+
+  companyIndex.push({
+    ...summary,
+    documentCount: documents.length,
+    sourceCount: sources.length,
+    profileUrl: `${encodedBase}/profile.json`,
+    ownershipUrl: ownership ? `${encodedBase}/ownership.json` : null,
+  });
+}
+
+const index = {
   meta: {
     title: "Portfolio Research Reader",
     researchCutoff: datedValues.sort().at(-1) ?? null,
@@ -322,23 +366,20 @@ const payload = {
       baseCurrency: mandate.attributes.base_currency,
       updated: mandate.attributes.mandate_updated,
       summary: summarizeMarkdown(mandate.body),
-      body: mandate.body,
       path: "vault/portfolio/mandate.md",
     },
     holdings,
     cash,
     watchlist,
   },
-  companies,
+  companies: companyIndex,
 };
 
-await writeFile(
-  path.join(appRoot, "app/data/repository.json"),
-  `${JSON.stringify(payload, null, 2)}\n`,
-  "utf8",
-);
+await writeJson(path.join(temporaryRoot, "index.json"), index);
+await rm(generatedRoot, { recursive: true, force: true });
+await rename(temporaryRoot, generatedRoot);
 
 const ownershipStudies = companies.filter((company) => company.ownership).length;
 console.log(
-  `Indexed ${companies.length} companies, ${companies.reduce((sum, company) => sum + company.documents.length, 0)} research documents, ${companies.reduce((sum, company) => sum + company.sources.length, 0)} source files, and ${ownershipStudies} ownership studies.`,
+  `Built a ${companyIndex.length}-company index with ${companies.reduce((sum, company) => sum + company.documents.length, 0)} research documents, ${companies.reduce((sum, company) => sum + company.sources.length, 0)} source files, and ${ownershipStudies} lazy ownership studies.`,
 );
