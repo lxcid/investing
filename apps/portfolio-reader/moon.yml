@@ -34,6 +34,7 @@ tasks:
       - '@group(research)'
       - 'scripts/sync-research-data.mjs'
     outputs:
+      - 'app/generated/**/*'
       - 'public/research-data/**/*'
     options:
       cache: false
@@ -64,6 +65,8 @@ tasks:
 
   lint:
     command: ['pnpm', 'run', 'lint']
+    deps:
+      - 'sync'
     inputs:
       - '@group(sources)'
 

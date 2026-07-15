@@ -8,8 +8,10 @@ const repoRoot = path.resolve(appRoot, "../..");
 const vaultRoot = path.join(repoRoot, "vault");
 const portfolioRoot = path.join(vaultRoot, "portfolio");
 const companiesRoot = path.join(vaultRoot, "companies");
-const generatedRoot = path.join(appRoot, "public", "research-data");
-const temporaryRoot = path.join(appRoot, "public", `.research-data-${process.pid}`);
+const generatedChunkRoot = path.join(appRoot, "public", "research-data");
+const temporaryChunkRoot = path.join(appRoot, "public", `.research-data-${process.pid}`);
+const generatedIndexRoot = path.join(appRoot, "app", "generated");
+const temporaryIndexRoot = path.join(appRoot, "app", `.generated-${process.pid}`);
 
 function coerce(value) {
   if (value === "") return null;
@@ -331,8 +333,10 @@ const datedValues = [
   ]),
 ].filter(Boolean);
 
-await rm(temporaryRoot, { recursive: true, force: true });
-await mkdir(temporaryRoot, { recursive: true });
+await rm(temporaryChunkRoot, { recursive: true, force: true });
+await rm(temporaryIndexRoot, { recursive: true, force: true });
+await mkdir(temporaryChunkRoot, { recursive: true });
+await mkdir(temporaryIndexRoot, { recursive: true });
 
 const companyIndex = [];
 for (const company of companies) {
@@ -345,7 +349,7 @@ for (const company of companies) {
     throw new Error(`Invalid canonical company path: ${company.path}`);
   }
   const [, , exchange, directory] = companyPathParts;
-  const chunkDirectory = path.join(temporaryRoot, "companies", exchange, directory);
+  const chunkDirectory = path.join(temporaryChunkRoot, "companies", exchange, directory);
   const encodedBase = `/research-data/companies/${encodeURIComponent(exchange)}/${encodeURIComponent(directory)}`;
   const { documents, sources, ownership, financials, ...summary } = company;
 
@@ -389,9 +393,11 @@ const index = {
   companies: companyIndex,
 };
 
-await writeJson(path.join(temporaryRoot, "index.json"), index);
-await rm(generatedRoot, { recursive: true, force: true });
-await rename(temporaryRoot, generatedRoot);
+await writeJson(path.join(temporaryIndexRoot, "repository-index.json"), index);
+await rm(generatedChunkRoot, { recursive: true, force: true });
+await rm(generatedIndexRoot, { recursive: true, force: true });
+await rename(temporaryChunkRoot, generatedChunkRoot);
+await rename(temporaryIndexRoot, generatedIndexRoot);
 
 const ownershipStudies = companies.filter((company) => company.ownership).length;
 console.log(

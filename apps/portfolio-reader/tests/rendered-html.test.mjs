@@ -40,7 +40,10 @@ test("server-renders the portfolio research reader", async () => {
 
 test("ships a small index with lazy company and ownership chunks", async () => {
   const dataRoot = new URL("../dist/client/research-data/", import.meta.url);
-  const indexText = await readFile(new URL("index.json", dataRoot), "utf8");
+  const indexText = await readFile(
+    new URL("../app/generated/repository-index.json", import.meta.url),
+    "utf8",
+  );
 
   const index = JSON.parse(indexText);
   assert.equal(index.meta.title, "Portfolio Research Reader");
@@ -95,4 +98,5 @@ test("ships a small index with lazy company and ownership chunks", async () => {
 
   await assert.rejects(access(new URL("../app/data/repository.json", import.meta.url)));
   await assert.rejects(access(new URL("../app/_sites-preview", import.meta.url)));
+  await assert.rejects(access(new URL("index.json", dataRoot)));
 });

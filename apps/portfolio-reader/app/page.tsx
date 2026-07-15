@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import generatedIndex from "../public/research-data/index.json";
+import generatedIndex from "./generated/repository-index.json";
 
 type NodeRow = {
   node_id: string;

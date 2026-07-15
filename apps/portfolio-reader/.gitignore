@@ -38,6 +38,8 @@ yarn-error.log*
 next-env.d.ts
 *.tsbuildinfo
 /dist/
+/app/generated/
+/app/.generated-*/
 public/research-data/
 public/.research-data-*/
 /.wrangler/
