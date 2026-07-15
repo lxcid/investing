@@ -1,0 +1,15 @@
+{
+  "company_path": "companies/SGX/BSL_Raffles-Medical-Group",
+  "ticker": "BSL",
+  "exchange": "SGX",
+  "currency": "SGD",
+  "price_type": "last traded / market close",
+  "as_of": "2026-07-15T17:04:07+08:00",
+  "price": 0.94,
+  "week_52_high": 1.09,
+  "week_52_low": 0.9,
+  "source_url": "https://www.google.com/finance/quote/BSL:SGX?hl=en",
+  "local_source": "companies/SGX/BSL_Raffles-Medical-Group/sources/market-data/2026-07-15-google-finance.html",
+  "cross_check_url": "https://sginvestors.io/sgx/stock/bsl-raffles-medical/share-price-history",
+  "notes": "The source is delayed public market data. Market capitalisation is calculated separately using the latest disclosed issued shares excluding treasury shares, rather than the rounded share count displayed by the source."
+}

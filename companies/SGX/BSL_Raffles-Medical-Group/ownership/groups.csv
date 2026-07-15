@@ -1,0 +1,4 @@
+group_id,display_name,group_type,primary_signal,definition,dedup_method,member_basis,warning
+group_loo_disclosed,Dr Loo disclosed total interest,regulatory_filer_view,true,Dr Loo direct plus all deemed interests reported in Form 1,use_reported_filer_total,Stable filer definition,Primary control signal; deemed components are not necessarily registered to Dr Loo
+group_sarah_disclosed,Dr Sarah Lu disclosed total interest,regulatory_filer_view,false,Dr Sarah Lu direct plus all deemed interests reported in Form 1,use_reported_filer_total,Stable filer definition,Overlaps with Dr Loo and Dr David Lu through S & D Holdings
+group_current_board_unique,Current board de-duplicated interest,derived_dependency_graph,false,Union of unique holding components attributable to current directors,count_each_holding_component_id_once,Director role effective dates,Do not interpret membership changes as purchases or sales

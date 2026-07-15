@@ -4,7 +4,7 @@ exchange: SGX
 isin: SG1CH4000003
 name: Raffles Medical Group Ltd
 sector: Health Care
-industry: ""
+industry: Healthcare Providers and Services
 currency: SGD
 research_status: candidate
 portfolio_status: watchlist
@@ -18,8 +18,9 @@ tags:
 # Raffles Medical Group Ltd
 
 > [!note] Tracking status
-> Added on 2026-07-15 as the first portfolio watchlist company. No ownership,
-> price, intrinsic value, or margin of safety has been recorded.
+> Added on 2026-07-15 as the first portfolio watchlist company. The initial
+> profile, dated price snapshot, and insider ownership dataset are complete. No
+> intrinsic value, margin of safety, or portfolio action has been recorded.
 
 ## Research
 
@@ -28,6 +29,11 @@ tags:
 - [[scorecard|Company scorecard]]
 - [[questions|Research questions]]
 - [[timeline|Material timeline]]
+- [[analysis/initial-profile-2026-07-15|Initial company profile]]
+- [[sources|Source register]]
+- [[financials/fy2025.json|FY2025 structured financial snapshot]]
+- [[market-data/2026-07-15-price.json|2026-07-15 price snapshot]]
+- [[ownership/README|Insider ownership dependency graph and signal series]]
 
 ## Open questions
 

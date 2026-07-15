@@ -1,0 +1,98 @@
+{
+  "company_path": "companies/SGX/BSL_Raffles-Medical-Group",
+  "period_end": "2025-12-31",
+  "currency": "SGD",
+  "monetary_units": "thousands",
+  "income_statement": {
+    "revenue": 765299,
+    "revenue_prior": 751564,
+    "ebitda": 134990,
+    "ebitda_prior": 125673,
+    "operating_profit": 90356,
+    "operating_profit_prior": 82494,
+    "profit_before_tax": 93594,
+    "profit_before_tax_prior": 86962,
+    "patmi": 70570,
+    "patmi_prior": 62243,
+    "diluted_eps_sgd": 0.0381,
+    "diluted_eps_sgd_prior": 0.0334,
+    "investment_property_fair_value_gain": 4700
+  },
+  "financial_position": {
+    "cash_and_cash_equivalents": 310791,
+    "borrowings_current": 49704,
+    "borrowings_non_current": 0,
+    "lease_liabilities_current": 10286,
+    "lease_liabilities_non_current": 27430,
+    "equity_attributable_to_owners": 1058480,
+    "investment_properties": 233600,
+    "total_assets": 1429939
+  },
+  "cash_flow": {
+    "net_cash_from_operating_activities": 101331,
+    "purchase_of_property_plant_and_equipment": 7867,
+    "acquisition_of_intangible_assets": 2159,
+    "payment_of_lease_liabilities": 11442,
+    "acquisition_of_own_shares": 19917,
+    "dividends_paid": 46273,
+    "acquisition_of_non_controlling_interest": 16594
+  },
+  "dividend": {
+    "fy2025_final_dividend_per_share_sgd": 0.03,
+    "approval_date": "2026-04-24",
+    "payment_date": "2026-05-22"
+  },
+  "segments": {
+    "healthcare_services": {
+      "revenue": 285898,
+      "revenue_prior": 295050,
+      "profit_before_tax": 42489,
+      "profit_before_tax_prior": 45123
+    },
+    "hospital_services": {
+      "revenue": 357823,
+      "revenue_prior": 345652,
+      "profit_before_tax": 41132,
+      "profit_before_tax_prior": 35683
+    },
+    "insurance_services": {
+      "revenue": 185230,
+      "revenue_prior": 177985,
+      "profit_before_tax": -3116,
+      "profit_before_tax_prior": -6305
+    },
+    "investment_holdings": {
+      "revenue": 44314,
+      "revenue_prior": 44894,
+      "profit_before_tax": 27162,
+      "profit_before_tax_prior": 23734
+    }
+  },
+  "geography": {
+    "revenue": {
+      "singapore": 680795,
+      "greater_china": 65357,
+      "rest_of_asia": 19147
+    },
+    "non_current_assets_excluding_financial_instruments_and_deferred_tax": {
+      "singapore": 671501,
+      "greater_china": 304010,
+      "rest_of_asia": 13409
+    },
+    "major_customer_revenue": 124200
+  },
+  "capital_structure": {
+    "issued_shares_excluding_treasury_as_of_2026_05_18": 1840190875,
+    "fy2025_diluted_weighted_average_shares": 1854054300,
+    "options_outstanding_as_of_2025_12_31": 78707000,
+    "options_excluded_as_antidilutive_in_fy2025": 62574000,
+    "founder_total_interest_as_of_2026_05_18": 1036280304,
+    "founder_total_interest_pct_as_of_2026_05_18": 56.313
+  },
+  "sources": {
+    "audited_annual_report": "companies/SGX/BSL_Raffles-Medical-Group/sources/annual-reports/fy2025.pdf",
+    "fy2025_results": "companies/SGX/BSL_Raffles-Medical-Group/sources/results/fy2025-condensed-financial-statements.pdf",
+    "founder_interest": "companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-05-19-director-interest-loo-choon-yong.pdf",
+    "agm_minutes": "companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-05-13-minutes-2026-agm.pdf"
+  }
+}
