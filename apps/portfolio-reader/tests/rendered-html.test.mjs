@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
@@ -54,24 +55,38 @@ test("ships a small index with lazy company and ownership chunks", async () => {
 
     const [, , exchange, directory] = summary.path.split("/");
     const chunkBase = `/research-data/companies/${encodeURIComponent(exchange)}/${encodeURIComponent(directory)}`;
-    assert.equal(summary.profileUrl, `${chunkBase}/profile.json`);
-    if (summary.ownershipUrl !== null) {
-      assert.equal(summary.ownershipUrl, `${chunkBase}/ownership.json`);
-    }
+    const profileUrl = new URL(`../dist/client${summary.profileUrl}`, import.meta.url);
+    assert.ok(summary.profileUrl.startsWith(`${chunkBase}/`));
+    const profileMatch = summary.profileUrl
+      .slice(chunkBase.length + 1)
+      .match(/^profile\.([a-f0-9]{16})\.json$/);
+    assert.ok(profileMatch, `Expected a content-addressed profile URL for ${summary.path}`);
 
-    const profile = JSON.parse(await readFile(
-      new URL(`../dist/client${summary.profileUrl}`, import.meta.url),
-      "utf8",
-    ));
+    const profileText = await readFile(profileUrl, "utf8");
+    const profile = JSON.parse(profileText);
+    assert.equal(
+      profileMatch[1],
+      createHash("sha256").update(profileText).digest("hex").slice(0, 16),
+    );
     assert.equal(profile.path, summary.path);
     assert.equal(profile.documents.length, summary.documentCount);
     assert.equal(profile.sources.length, summary.sourceCount);
 
     if (summary.ownershipUrl) {
-      const ownership = JSON.parse(await readFile(
+      assert.ok(summary.ownershipUrl.startsWith(`${chunkBase}/`));
+      const ownershipMatch = summary.ownershipUrl
+        .slice(chunkBase.length + 1)
+        .match(/^ownership\.([a-f0-9]{16})\.json$/);
+      assert.ok(ownershipMatch, `Expected a content-addressed ownership URL for ${summary.path}`);
+      const ownershipText = await readFile(
         new URL(`../dist/client${summary.ownershipUrl}`, import.meta.url),
         "utf8",
-      ));
+      );
+      const ownership = JSON.parse(ownershipText);
+      assert.equal(
+        ownershipMatch[1],
+        createHash("sha256").update(ownershipText).digest("hex").slice(0, 16),
+      );
       assert.ok(Array.isArray(ownership.nodes));
       assert.ok(Array.isArray(ownership.edges));
       assert.ok(Array.isArray(ownership.groupSeries));

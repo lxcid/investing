@@ -248,8 +248,9 @@ function formatThousands(value: number | undefined, currency = "SGD") {
   return `${currency} ${(value / 1_000).toFixed(1)}m`;
 }
 
-async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(url, { signal, cache: "no-store" });
+async function fetchChunkJson<T>(url: string): Promise<T> {
+  // Chunk URLs contain a hash of their JSON payload, so each URL is immutable.
+  const response = await fetch(url, { cache: "force-cache" });
   if (!response.ok) {
     throw new Error(`Could not load ${url} (${response.status})`);
   }
@@ -1009,7 +1010,7 @@ export default function Home() {
     setSelectedCompany(null);
     setLoading(`Loading ${summary.metadata.name}…`);
     try {
-      const profile = await fetchJson<CompanyProfile>(summary.profileUrl);
+      const profile = await fetchChunkJson<CompanyProfile>(summary.profileUrl);
       if (profile.path !== summary.path) {
         throw new Error(`Profile path mismatch for ${summary.metadata.name}.`);
       }
@@ -1044,7 +1045,7 @@ export default function Home() {
     const request = ++requestSequence.current;
     setLoading(`Loading ${selectedCompany.metadata.name} ownership data…`);
     try {
-      const ownership = await fetchJson<OwnershipData>(selectedCompany.ownershipUrl);
+      const ownership = await fetchChunkJson<OwnershipData>(selectedCompany.ownershipUrl);
       ownershipCache.current.set(selectedCompany.path, ownership);
       if (request !== requestSequence.current) return;
       const company = { ...selectedCompany, ownership };

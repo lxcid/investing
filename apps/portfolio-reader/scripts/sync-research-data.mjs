@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -294,9 +295,22 @@ async function readCompanies() {
   );
 }
 
+function serializeJson(value) {
+  return `${JSON.stringify(value, null, 2)}\n`;
+}
+
 async function writeJson(absolutePath, value) {
   await mkdir(path.dirname(absolutePath), { recursive: true });
-  await writeFile(absolutePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  await writeFile(absolutePath, serializeJson(value), "utf8");
+}
+
+async function writeContentAddressedJson(directory, basename, value) {
+  const contents = serializeJson(value);
+  const digest = createHash("sha256").update(contents).digest("hex").slice(0, 16);
+  const filename = `${basename}.${digest}.json`;
+  await mkdir(directory, { recursive: true });
+  await writeFile(path.join(directory, filename), contents, "utf8");
+  return filename;
 }
 
 const mandateText = await readFile(path.join(portfolioRoot, "mandate.md"), "utf8");
@@ -335,22 +349,22 @@ for (const company of companies) {
   const encodedBase = `/research-data/companies/${encodeURIComponent(exchange)}/${encodeURIComponent(directory)}`;
   const { documents, sources, ownership, financials, ...summary } = company;
 
-  await writeJson(path.join(chunkDirectory, "profile.json"), {
+  const profileFilename = await writeContentAddressedJson(chunkDirectory, "profile", {
     path: company.path,
     financials,
     documents,
     sources,
   });
-  if (ownership) {
-    await writeJson(path.join(chunkDirectory, "ownership.json"), ownership);
-  }
+  const ownershipFilename = ownership
+    ? await writeContentAddressedJson(chunkDirectory, "ownership", ownership)
+    : null;
 
   companyIndex.push({
     ...summary,
     documentCount: documents.length,
     sourceCount: sources.length,
-    profileUrl: `${encodedBase}/profile.json`,
-    ownershipUrl: ownership ? `${encodedBase}/ownership.json` : null,
+    profileUrl: `${encodedBase}/${profileFilename}`,
+    ownershipUrl: ownershipFilename ? `${encodedBase}/${ownershipFilename}` : null,
   });
 }
 
