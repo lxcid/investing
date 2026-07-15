@@ -1,0 +1,44 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: portfolio-tools
+language: python
+layer: tool
+stack: data
+
+project:
+  description: Validate portfolio state and derive portfolio summaries.
+
+tasks:
+  summary:
+    command: ['uv', 'run', '--locked', 'portfolio-tools', 'summary']
+    inputs:
+      - 'src/**/*'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '/portfolio/**/*'
+      - '/companies/**/*.md'
+      - '/schemas/evaluation-log.schema.json'
+    options:
+      cache: false
+
+  validate:
+    command: ['uv', 'run', '--locked', 'portfolio-tools', 'validate']
+    inputs:
+      - 'src/**/*'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '/portfolio/**/*'
+      - '/companies/**/*.md'
+      - '/schemas/evaluation-log.schema.json'
+    options:
+      cache: false
+
+  test:
+    command: ['uv', 'run', '--locked', 'pytest']
+    inputs:
+      - 'src/**/*'
+      - 'tests/**/*'
+      - 'pyproject.toml'
+      - 'uv.lock'
+    options:
+      cache: false
