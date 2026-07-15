@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import repositoryData from "./data/repository.json";
+import generatedIndex from "./generated/repository-index.json";
 
 type NodeRow = {
   node_id: string;
@@ -145,7 +145,7 @@ type FinancialData = {
   };
 };
 
-type Company = {
+type CompanySummary = {
   path: string;
   metadata: {
     ticker: string;
@@ -160,17 +160,28 @@ type Company = {
     metadata_updated: string;
   };
   summary: string;
+  price: PriceData | null;
+  documentCount: number;
+  sourceCount: number;
+  profileUrl: string;
+  ownershipUrl: string | null;
+};
+
+type CompanyProfile = {
+  path: string;
+  financials: FinancialData | null;
   documents: ResearchDocument[];
   sources: SourceFile[];
-  price: PriceData | null;
-  financials: FinancialData | null;
+};
+
+type Company = CompanySummary & CompanyProfile & {
   ownership: OwnershipData | null;
 };
 
-type RepositoryData = {
+type RepositoryIndex = {
   meta: {
     title: string;
-    researchCutoff: string;
+    researchCutoff: string | null;
   };
   portfolio: {
     mandate: {
@@ -178,7 +189,6 @@ type RepositoryData = {
       baseCurrency: string;
       updated: string;
       summary: string;
-      body: string;
       path: string;
     };
     holdings: Record<string, unknown>[];
@@ -190,12 +200,13 @@ type RepositoryData = {
       reason: string;
     }[];
   };
-  companies: Company[];
+  companies: CompanySummary[];
 };
+
+const repositoryIndex = generatedIndex as RepositoryIndex;
 
 type View = "portfolio" | "company" | "ownership";
 
-const data = repositoryData as unknown as RepositoryData;
 const numberFormat = new Intl.NumberFormat("en-SG");
 const compactFormat = new Intl.NumberFormat("en-SG", {
   notation: "compact",
@@ -235,6 +246,15 @@ function formatFileSize(bytes: number) {
 function formatThousands(value: number | undefined, currency = "SGD") {
   if (value == null) return "—";
   return `${currency} ${(value / 1_000).toFixed(1)}m`;
+}
+
+async function fetchChunkJson<T>(url: string): Promise<T> {
+  // Chunk URLs contain a hash of their JSON payload, so each URL is immutable.
+  const response = await fetch(url, { cache: "force-cache" });
+  if (!response.ok) {
+    throw new Error(`Could not load ${url} (${response.status})`);
+  }
+  return response.json() as Promise<T>;
 }
 
 function cleanInlineText(value: string) {
@@ -525,14 +545,16 @@ function OwnershipChart({
 }
 
 function PortfolioView({
+  data,
   companies,
   onOpenCompany,
 }: {
-  companies: Company[];
-  onOpenCompany: (company: Company) => void;
+  data: RepositoryIndex;
+  companies: CompanySummary[];
+  onOpenCompany: (company: CompanySummary) => void;
 }) {
-  const sourceCount = companies.reduce((sum, company) => sum + company.sources.length, 0);
-  const documentCount = companies.reduce((sum, company) => sum + company.documents.length, 0);
+  const sourceCount = companies.reduce((sum, company) => sum + company.sourceCount, 0);
+  const documentCount = companies.reduce((sum, company) => sum + company.documentCount, 0);
 
   return (
     <>
@@ -623,8 +645,8 @@ function PortfolioView({
                   <span>{company.metadata.exchange}:{company.metadata.ticker}</span>
                 </div>
                 <dl>
-                  <div><dt>Research</dt><dd>{company.documents.length} notes</dd></div>
-                  <div><dt>Evidence</dt><dd>{company.sources.length} files</dd></div>
+                  <div><dt>Research</dt><dd>{company.documentCount} notes</dd></div>
+                  <div><dt>Evidence</dt><dd>{company.sourceCount} files</dd></div>
                   <div><dt>Next review</dt><dd>{formatDate(watchlist?.next_review_date)}</dd></div>
                 </dl>
                 <span className="open-company">Open research →</span>
@@ -651,17 +673,19 @@ function PortfolioView({
 }
 
 function CompanyView({
+  portfolio,
   company,
   selectedDocument,
   onSelectDocument,
   onOpenOwnership,
 }: {
+  portfolio: RepositoryIndex["portfolio"];
   company: Company;
   selectedDocument: ResearchDocument;
   onSelectDocument: (document: ResearchDocument) => void;
   onOpenOwnership: () => void;
 }) {
-  const watchlist = data.portfolio.watchlist.find((entry) => entry.company_path === company.path);
+  const watchlist = portfolio.watchlist.find((entry) => entry.company_path === company.path);
   const financials = company.financials;
   const price = company.price;
 
@@ -745,7 +769,7 @@ function CompanyView({
             ))}
           </div>
           {company.sources.length > 8 && <small>+ {company.sources.length - 8} more in the source register</small>}
-          {company.ownership && (
+          {company.ownershipUrl && (
             <button className="ownership-launch" onClick={onOpenOwnership}>
               <span>Specialist view</span>
               <strong>Ownership dependency study</strong>
@@ -949,25 +973,110 @@ function OwnershipStudyContent({ company, ownership }: { company: Company; owner
 }
 
 export default function Home() {
+  const data = repositoryIndex;
   const [view, setView] = useState<View>("portfolio");
-  const [selectedCompanyPath, setSelectedCompanyPath] = useState(data.companies[0]?.path ?? "");
-  const selectedCompany = data.companies.find((company) => company.path === selectedCompanyPath) ?? data.companies[0];
-  const defaultDocument = selectedCompany.documents.find((document) => document.kind === "Analysis") ?? selectedCompany.documents[0];
-  const [selectedDocumentId, setSelectedDocumentId] = useState(defaultDocument.id);
-  const selectedDocument = selectedCompany.documents.find((document) => document.id === selectedDocumentId) ?? defaultDocument;
+  const [selectedCompanyPath, setSelectedCompanyPath] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState("");
+  const [loading, setLoading] = useState("");
+  const [error, setError] = useState("");
+  const companyCache = useRef(new Map<string, Company>());
+  const ownershipCache = useRef(new Map<string, OwnershipData>());
+  const requestSequence = useRef(0);
 
-  const openCompany = (company: Company) => {
-    setSelectedCompanyPath(company.path);
-    const nextDocument = company.documents.find((document) => document.kind === "Analysis") ?? company.documents[0];
-    setSelectedDocumentId(nextDocument.id);
+  const selectedDocument = selectedCompany
+    ? selectedCompany.documents.find((document) => document.id === selectedDocumentId) ??
+      selectedCompany.documents.find((document) => document.kind === "Analysis") ??
+      selectedCompany.documents[0]
+    : undefined;
+
+  const openCompany = async (summary: CompanySummary) => {
+    const request = ++requestSequence.current;
+    setSelectedCompanyPath(summary.path);
     setView("company");
+    setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const cached = companyCache.current.get(summary.path);
+    if (cached) {
+      setSelectedCompany(cached);
+      const nextDocument =
+        cached.documents.find((document) => document.kind === "Analysis") ?? cached.documents[0];
+      setSelectedDocumentId(nextDocument?.id ?? "");
+      setLoading("");
+      return;
+    }
+
+    setSelectedCompany(null);
+    setLoading(`Loading ${summary.metadata.name}…`);
+    try {
+      const profile = await fetchChunkJson<CompanyProfile>(summary.profileUrl);
+      if (profile.path !== summary.path) {
+        throw new Error(`Profile path mismatch for ${summary.metadata.name}.`);
+      }
+      const company: Company = {
+        ...summary,
+        ...profile,
+        ownership: ownershipCache.current.get(summary.path) ?? null,
+      };
+      companyCache.current.set(summary.path, company);
+      if (request !== requestSequence.current) return;
+      setSelectedCompany(company);
+      const nextDocument =
+        company.documents.find((document) => document.kind === "Analysis") ?? company.documents[0];
+      setSelectedDocumentId(nextDocument?.id ?? "");
+    } catch (loadError) {
+      if (request !== requestSequence.current) return;
+      setError(
+        loadError instanceof Error ? loadError.message : `Could not load ${summary.metadata.name}.`,
+      );
+    } finally {
+      if (request === requestSequence.current) setLoading("");
+    }
+  };
+
+  const openOwnership = async () => {
+    if (!selectedCompany?.ownershipUrl) return;
+    setView("ownership");
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (selectedCompany.ownership) return;
+
+    const request = ++requestSequence.current;
+    setLoading(`Loading ${selectedCompany.metadata.name} ownership data…`);
+    try {
+      const ownership = await fetchChunkJson<OwnershipData>(selectedCompany.ownershipUrl);
+      ownershipCache.current.set(selectedCompany.path, ownership);
+      if (request !== requestSequence.current) return;
+      const company = { ...selectedCompany, ownership };
+      companyCache.current.set(company.path, company);
+      setSelectedCompany(company);
+    } catch (loadError) {
+      if (request !== requestSequence.current) return;
+      setError(
+        loadError instanceof Error ? loadError.message : "Could not load the ownership study.",
+      );
+    } finally {
+      if (request === requestSequence.current) setLoading("");
+    }
   };
 
   const navigate = (nextView: View) => {
-    if (nextView === "ownership" && !selectedCompany.ownership) return;
-    setView(nextView);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (nextView === "portfolio") {
+      requestSequence.current += 1;
+      setLoading("");
+      setError("");
+      setView(nextView);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (nextView === "ownership") {
+      void openOwnership();
+      return;
+    }
+    const summary =
+      data.companies.find((company) => company.path === selectedCompanyPath) ?? data.companies[0];
+    if (summary) void openCompany(summary);
   };
 
   return (
@@ -979,15 +1088,29 @@ export default function Home() {
         </button>
         <nav aria-label="Reader views">
           <button className={view === "portfolio" ? "active" : ""} onClick={() => navigate("portfolio")}>Portfolio</button>
-          <button className={view === "company" ? "active" : ""} onClick={() => navigate("company")}>Company research</button>
-          <button className={view === "ownership" ? "active" : ""} disabled={!selectedCompany.ownership} onClick={() => navigate("ownership")}>Ownership study</button>
+          <button className={view === "company" ? "active" : ""} disabled={!data.companies.length} onClick={() => navigate("company")}>Company research</button>
+          <button className={view === "ownership" ? "active" : ""} disabled={!selectedCompany?.ownershipUrl} onClick={() => navigate("ownership")}>Ownership study</button>
         </nav>
         <div className="repository-chip"><span className="live-dot" />Read-only · {data.portfolio.mandate.baseCurrency}</div>
       </header>
 
-      {view === "portfolio" && <PortfolioView companies={data.companies} onOpenCompany={openCompany} />}
-      {view === "company" && <CompanyView company={selectedCompany} selectedDocument={selectedDocument} onSelectDocument={(document) => setSelectedDocumentId(document.id)} onOpenOwnership={() => navigate("ownership")} />}
-      {view === "ownership" && <OwnershipStudy company={selectedCompany} />}
+      {error && <section className="empty-state" role="alert"><h1>Reader data unavailable</h1><p>{error}</p></section>}
+      {!error && loading && <section className="empty-state" aria-live="polite"><h1>Reading the vault</h1><p>{loading}</p></section>}
+      {!error && !loading && view === "portfolio" && (
+        <PortfolioView data={data} companies={data.companies} onOpenCompany={(company) => void openCompany(company)} />
+      )}
+      {!error && !loading && view === "company" && selectedCompany && selectedDocument && (
+        <CompanyView
+          portfolio={data.portfolio}
+          company={selectedCompany}
+          selectedDocument={selectedDocument}
+          onSelectDocument={(document) => setSelectedDocumentId(document.id)}
+          onOpenOwnership={() => void openOwnership()}
+        />
+      )}
+      {!error && !loading && view === "ownership" && selectedCompany?.ownership && (
+        <OwnershipStudy company={selectedCompany} />
+      )}
 
       <footer>
         <div><strong>Portfolio Research Reader</strong><span>Read-only projection of repository evidence and analysis.</span></div>

@@ -15,9 +15,9 @@ tasks:
       - 'src/**/*'
       - 'pyproject.toml'
       - 'uv.lock'
-      - '/portfolio/**/*'
-      - '/companies/**/*.md'
-      - '/schemas/evaluation-log.schema.json'
+      - '/vault/portfolio/**/*'
+      - '/vault/companies/**/*.md'
+      - '/vault/schemas/evaluation-log.schema.json'
     options:
       cache: false
 
@@ -27,9 +27,9 @@ tasks:
       - 'src/**/*'
       - 'pyproject.toml'
       - 'uv.lock'
-      - '/portfolio/**/*'
-      - '/companies/**/*.md'
-      - '/schemas/evaluation-log.schema.json'
+      - '/vault/portfolio/**/*'
+      - '/vault/companies/**/*.md'
+      - '/vault/schemas/evaluation-log.schema.json'
     options:
       cache: false
 

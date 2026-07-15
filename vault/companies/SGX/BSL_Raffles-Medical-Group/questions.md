@@ -25,11 +25,11 @@
   reports Healthcare Services, Hospital Services, Insurance Services, and
   Investment Holdings; their activities are defined in Note 23. Normalized
   margins and reinvestment needs remain open.
-  [[companies/SGX/BSL_Raffles-Medical-Group/sources/annual-reports/fy2025.pdf#page=214|FY2025 annual report, PDF p. 214]]
+  [[vault/companies/SGX/BSL_Raffles-Medical-Group/sources/annual-reports/fy2025.pdf#page=214|FY2025 annual report, PDF p. 214]]
 - **What is the latest reported period?** Answered 2026-07-15. FY2025 is the
   latest published financial period; 1H2026 is scheduled for release before
   trading on 2026-07-27.
-  [[companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-06-12-1h2026-results-release-notification.html|1H2026 results-release notification]]
+  [[vault/companies/SGX/BSL_Raffles-Medical-Group/sources/announcements/2026-06-12-1h2026-results-release-notification.html|1H2026 results-release notification]]
 - **What is the latest dated market price?** Answered 2026-07-15. SGD 0.940 at
   17:04 SGT, with a 52-week range of SGD 0.900 to SGD 1.090.
-  [[companies/SGX/BSL_Raffles-Medical-Group/sources/market-data/2026-07-15-google-finance.html|Google Finance snapshot]]
+  [[vault/companies/SGX/BSL_Raffles-Medical-Group/sources/market-data/2026-07-15-google-finance.html|Google Finance snapshot]]

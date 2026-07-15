@@ -24,8 +24,8 @@ fileGroups:
     - 'tsconfig.json'
     - 'vite.config.ts'
   research:
-    - '/portfolio/**/*'
-    - '/companies/**/*'
+    - '/vault/portfolio/**/*'
+    - '/vault/companies/**/*'
 
 tasks:
   sync:
@@ -34,7 +34,8 @@ tasks:
       - '@group(research)'
       - 'scripts/sync-research-data.mjs'
     outputs:
-      - 'app/data/repository.json'
+      - 'app/generated/**/*'
+      - 'public/research-data/**/*'
     options:
       cache: false
 
@@ -57,11 +58,15 @@ tasks:
 
   typecheck:
     command: ['pnpm', 'exec', 'tsc', '--noEmit']
+    deps:
+      - 'sync'
     inputs:
       - '@group(sources)'
 
   lint:
     command: ['pnpm', 'run', 'lint']
+    deps:
+      - 'sync'
     inputs:
       - '@group(sources)'
 

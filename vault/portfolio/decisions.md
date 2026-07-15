@@ -6,8 +6,8 @@ Do not rewrite old entries with hindsight.
 
 ## YYYY-MM-DD — EXCHANGE:TICKER — Decision
 
-- **Company:** [[companies/EXCHANGE/TICKER_NAME/index|Company name]]
-- **Company path:** `companies/EXCHANGE/TICKER_NAME`
+- **Company:** [[vault/companies/EXCHANGE/TICKER_NAME/index|Company name]]
+- **Company path:** `vault/companies/EXCHANGE/TICKER_NAME`
 - **Decision:**
 - **Evidence available:**
 - **Reasoning:**
@@ -18,8 +18,8 @@ Do not rewrite old entries with hindsight.
 
 ## 2026-07-15 — SGX:BSL — Add to watchlist
 
-- **Company:** [[companies/SGX/BSL_Raffles-Medical-Group/index|Raffles Medical Group Ltd]]
-- **Company path:** `companies/SGX/BSL_Raffles-Medical-Group`
+- **Company:** [[vault/companies/SGX/BSL_Raffles-Medical-Group/index|Raffles Medical Group Ltd]]
+- **Company path:** `vault/companies/SGX/BSL_Raffles-Medical-Group`
 - **Decision:** Begin tracking as a research candidate; no position established.
 - **Evidence available:** Company identity confirmed through official company and
   SGX issuer records. Primary financial documents have not been ingested.

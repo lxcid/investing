@@ -215,7 +215,7 @@ def parse_fx(
 
 
 def load_mandate(repo_root: Path) -> Mandate:
-    path = repo_root / "portfolio" / "mandate.md"
+    path = repo_root / "vault" / "portfolio" / "mandate.md"
     data = read_frontmatter(path)
     status = data.get("status")
     if status not in {"working", "confirmed"}:
@@ -230,7 +230,8 @@ def load_mandate(repo_root: Path) -> Mandate:
 def load_companies(repo_root: Path) -> dict[str, Company]:
     companies: dict[str, Company] = {}
     listing_paths: dict[tuple[str, str], str] = {}
-    for index_path in sorted((repo_root / "companies").glob("*/*/index.md")):
+    companies_root = repo_root / "vault" / "companies"
+    for index_path in sorted(companies_root.glob("*/*/index.md")):
         company_path = index_path.parent.relative_to(repo_root).as_posix()
         data = read_frontmatter(index_path)
         exchange = data.get("exchange")
@@ -253,14 +254,14 @@ def load_companies(repo_root: Path) -> dict[str, Company]:
         if portfolio_status not in PORTFOLIO_STATUSES:
             raise fail(f"{index_path}: invalid portfolio_status {portfolio_status!r}")
         path_parts = PurePosixPath(company_path).parts
-        directory_name = path_parts[2]
+        directory_name = path_parts[3]
         ticker_prefix = f"{ticker}_"
         short_name = (
             directory_name.removeprefix(ticker_prefix)
             if directory_name.startswith(ticker_prefix)
             else ""
         )
-        if exchange != path_parts[1]:
+        if exchange != path_parts[2]:
             raise fail(f"{index_path}: exchange does not match the company path")
         if not short_name or short_name.strip() != short_name:
             raise fail(
@@ -293,14 +294,14 @@ def require_company(
     if (
         raw_path != pure_path.as_posix()
         or pure_path.is_absolute()
-        or len(pure_path.parts) != 3
-        or pure_path.parts[0] != "companies"
+        or len(pure_path.parts) != 4
+        or pure_path.parts[:2] != ("vault", "companies")
     ):
         raise fail(f"{identity}: invalid canonical company_path {raw_path!r}")
     if any(part in {"", ".", ".."} for part in pure_path.parts):
         raise fail(f"{identity}: invalid canonical company_path {raw_path!r}")
     resolved = (repo_root / Path(*pure_path.parts)).resolve()
-    companies_root = (repo_root / "companies").resolve()
+    companies_root = (repo_root / "vault" / "companies").resolve()
     if not resolved.is_relative_to(companies_root) or not (resolved / "index.md").is_file():
         raise fail(f"{identity}: company_path does not exist: {raw_path}")
     company = companies.get(raw_path)
@@ -332,7 +333,7 @@ def load_holdings(
     companies: dict[str, Company],
     validation_date: date,
 ) -> list[Holding]:
-    path = repo_root / "portfolio" / "holdings.csv"
+    path = repo_root / "vault" / "portfolio" / "holdings.csv"
     rows = read_csv(path, HOLDING_FIELDS)
     holdings: list[Holding] = []
     seen: set[str] = set()
@@ -404,7 +405,7 @@ def load_holdings(
 def load_cash(
     repo_root: Path, mandate: Mandate, validation_date: date
 ) -> list[CashBalance]:
-    path = repo_root / "portfolio" / "cash.csv"
+    path = repo_root / "vault" / "portfolio" / "cash.csv"
     rows = read_csv(path, CASH_FIELDS)
     balances: list[CashBalance] = []
     seen: set[str] = set()
@@ -433,7 +434,7 @@ def load_cash(
 def load_watchlist(
     repo_root: Path, companies: dict[str, Company], validation_date: date
 ) -> set[str]:
-    path = repo_root / "portfolio" / "watchlist.csv"
+    path = repo_root / "vault" / "portfolio" / "watchlist.csv"
     rows = read_csv(path, WATCHLIST_FIELDS)
     watchlist: set[str] = set()
     for line_number, row in enumerate(rows, start=2):
@@ -489,8 +490,8 @@ def validate_valuation_dates(holdings: list[Holding], cash: list[CashBalance]) -
 def load_evaluation_log(
     repo_root: Path, companies: dict[str, Company], validation_date: date
 ) -> int:
-    schema_path = repo_root / "schemas" / "evaluation-log.schema.json"
-    log_path = repo_root / "portfolio" / "evaluation-log.jsonl"
+    schema_path = repo_root / "vault" / "schemas" / "evaluation-log.schema.json"
+    log_path = repo_root / "vault" / "portfolio" / "evaluation-log.jsonl"
     try:
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         lines = log_path.read_text(encoding="utf-8").splitlines()
@@ -574,7 +575,7 @@ def render_summary(snapshot: PortfolioSnapshot) -> str:
         return "No valued holdings or cash recorded."
     if snapshot.mandate.status != "confirmed":
         raise fail(
-            "portfolio/mandate.md must have status: confirmed before derived "
+            "vault/portfolio/mandate.md must have status: confirmed before derived "
             "portfolio analysis"
         )
     total = sum((row[5] for row in rows), Decimal("0"))
@@ -614,9 +615,9 @@ def render_summary(snapshot: PortfolioSnapshot) -> str:
 
 def discover_repo_root(start: Path) -> Path:
     for candidate in (start.resolve(), *start.resolve().parents):
-        if (candidate / "portfolio" / "mandate.md").is_file():
+        if (candidate / "vault" / "portfolio" / "mandate.md").is_file():
             return candidate
-    raise fail("cannot find repository root containing portfolio/mandate.md")
+    raise fail("cannot find repository root containing vault/portfolio/mandate.md")
 
 
 def build_parser() -> argparse.ArgumentParser:

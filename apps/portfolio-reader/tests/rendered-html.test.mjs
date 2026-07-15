@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
-
-const appRoot = new URL("../", import.meta.url);
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -32,33 +31,72 @@ test("server-renders the portfolio research reader", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Portfolio Research Reader<\/title>/i);
-  assert.match(html, /Read the evidence/);
-  assert.match(html, /Company library/);
-  assert.match(html, /Raffles Medical Group Ltd/);
-  assert.match(html, /Preserved sources/);
+  assert.match(html, /Read the evidence\./);
+  assert.match(html, /Research by business, not by screen\./);
+  assert.doesNotMatch(html, /Loading the vault index/);
+  assert.match(html, /Portfolio Reader/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
 });
 
-test("ships the generated repository projection and removes the disposable preview", async () => {
-  const [data, page, packageJson] = await Promise.all([
-    readFile(new URL("../app/data/repository.json", import.meta.url), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-  ]);
+test("ships a small index with lazy company and ownership chunks", async () => {
+  const dataRoot = new URL("../dist/client/research-data/", import.meta.url);
+  const indexText = await readFile(
+    new URL("../app/generated/repository-index.json", import.meta.url),
+    "utf8",
+  );
 
-  const payload = JSON.parse(data);
-  assert.equal(payload.meta.title, "Portfolio Research Reader");
-  assert.equal(payload.portfolio.mandate.status, "working");
-  assert.equal(payload.companies.length, 1);
-  assert.equal(payload.companies[0].metadata.ticker, "BSL");
-  assert.equal(payload.companies[0].documents.length, 9);
-  assert.equal(payload.companies[0].ownership.nodes.length, 16);
-  assert.equal(payload.companies[0].ownership.edges.length, 19);
-  assert.match(page, /PortfolioView/);
-  assert.match(page, /CompanyView/);
-  assert.match(page, /holding_component_id/);
-  assert.match(packageJson, /"sync:data"/);
-  assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  const index = JSON.parse(indexText);
+  assert.equal(index.meta.title, "Portfolio Research Reader");
+  assert.equal(index.portfolio.mandate.status, "working");
+  assert.ok(index.companies.length > 0);
+
+  await Promise.all(index.companies.map(async (summary) => {
+    assert.match(summary.path, /^vault\/companies\/[^/]+\/[^/]+_[^/]+$/);
+    assert.equal("documents" in summary, false);
+    assert.equal("financials" in summary, false);
+    assert.equal("ownership" in summary, false);
+
+    const [, , exchange, directory] = summary.path.split("/");
+    const chunkBase = `/research-data/companies/${encodeURIComponent(exchange)}/${encodeURIComponent(directory)}`;
+    const profileUrl = new URL(`../dist/client${summary.profileUrl}`, import.meta.url);
+    assert.ok(summary.profileUrl.startsWith(`${chunkBase}/`));
+    const profileMatch = summary.profileUrl
+      .slice(chunkBase.length + 1)
+      .match(/^profile\.([a-f0-9]{16})\.json$/);
+    assert.ok(profileMatch, `Expected a content-addressed profile URL for ${summary.path}`);
+
+    const profileText = await readFile(profileUrl, "utf8");
+    const profile = JSON.parse(profileText);
+    assert.equal(
+      profileMatch[1],
+      createHash("sha256").update(profileText).digest("hex").slice(0, 16),
+    );
+    assert.equal(profile.path, summary.path);
+    assert.equal(profile.documents.length, summary.documentCount);
+    assert.equal(profile.sources.length, summary.sourceCount);
+
+    if (summary.ownershipUrl) {
+      assert.ok(summary.ownershipUrl.startsWith(`${chunkBase}/`));
+      const ownershipMatch = summary.ownershipUrl
+        .slice(chunkBase.length + 1)
+        .match(/^ownership\.([a-f0-9]{16})\.json$/);
+      assert.ok(ownershipMatch, `Expected a content-addressed ownership URL for ${summary.path}`);
+      const ownershipText = await readFile(
+        new URL(`../dist/client${summary.ownershipUrl}`, import.meta.url),
+        "utf8",
+      );
+      const ownership = JSON.parse(ownershipText);
+      assert.equal(
+        ownershipMatch[1],
+        createHash("sha256").update(ownershipText).digest("hex").slice(0, 16),
+      );
+      assert.ok(Array.isArray(ownership.nodes));
+      assert.ok(Array.isArray(ownership.edges));
+      assert.ok(Array.isArray(ownership.groupSeries));
+    }
+  }));
+
+  await assert.rejects(access(new URL("../app/data/repository.json", import.meta.url)));
   await assert.rejects(access(new URL("../app/_sites-preview", import.meta.url)));
-  await assert.rejects(access(new URL("node_modules/react-loading-skeleton", appRoot)));
+  await assert.rejects(access(new URL("index.json", dataRoot)));
 });
