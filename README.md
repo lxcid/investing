@@ -50,6 +50,10 @@ The repository separates authoritative state from derived analysis:
 Agents analyze evidence, challenge assumptions, calculate repeatable outputs,
 and propose actions. Only the investor authorizes portfolio decisions.
 
+The first tracked company is [Raffles Medical Group Ltd
+(SGX: BSL)](companies/SGX/BSL_Raffles-Medical-Group/index.md). It is currently a
+watchlist candidate; no holding, price, or valuation has been assumed.
+
 ## Repository layout
 
 ```text
@@ -80,8 +84,8 @@ extracted material, financial models, and analysis separate.
 
 ## Start the experiment
 
-1. Select one operating company, one financial company, and one income vehicle
-   such as a REIT for the initial research set.
+1. Research BSL as the first tracked candidate, then add one financial company
+   and one income vehicle such as a REIT for sector contrast.
 2. Create the exchange directory, then copy `templates/company/` to
    `companies/<exchange>/<ticker>_<short-name>/`.
 3. Add primary documents under `sources/` without modifying them.
