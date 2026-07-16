@@ -1,7 +1,7 @@
 "use client";
 
+import { slug } from "github-slugger";
 import type { Blockquote, Link, PhrasingContent, Root } from "mdast";
-import { useMemo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
@@ -19,13 +19,13 @@ export type MarkdownDocument = {
 };
 
 type MarkdownReaderProps = {
-  body: string;
   currentDocument: MarkdownDocument;
   documents: MarkdownDocument[];
   onSelectDocument: (document: MarkdownDocument) => void;
 };
 
 const wikiTokenPattern = /(!)?\[\[([^\]\n]+)\]\]/g;
+const wikiAliasPipeSentinel = "\uE000";
 const wikiLinkPrefix = "#vault-link=";
 const wikiEmbedPrefix = "#vault-embed=";
 
@@ -44,8 +44,11 @@ function stripMarkdownExtension(value: string) {
 }
 
 function wikiLabel(target: string) {
-  const withoutAnchor = target.split("#", 1)[0];
-  return stripMarkdownExtension(withoutAnchor.split("/").at(-1) ?? withoutAnchor);
+  const [withoutAnchor, anchor = ""] = target.split("#", 2);
+  const pathLabel = stripMarkdownExtension(
+    withoutAnchor.split("/").at(-1) ?? withoutAnchor,
+  );
+  return pathLabel || anchor || target;
 }
 
 function createWikiLink(rawValue: string, embedded: boolean): Link {
@@ -67,30 +70,49 @@ function createWikiLink(rawValue: string, embedded: boolean): Link {
   };
 }
 
+/** Hide wiki alias pipes until remark-gfm has finished tokenizing tables. */
+function protectWikiAliasPipes(value: string) {
+  return value.replace(wikiTokenPattern, (token) =>
+    token.replaceAll("|", wikiAliasPipeSentinel),
+  );
+}
+
 /** Convert Obsidian wiki syntax in text nodes into ordinary mdast links. */
 function remarkWikiLinks() {
   return (tree: Root) => {
     visit(tree, "text", (node, index, parent) => {
-      if (index == null || !parent || !node.value.includes("[[")) return;
+      if (index == null || !parent) return;
+      const value = node.value.replaceAll(wikiAliasPipeSentinel, "|");
+      if (!value.includes("[[")) {
+        node.value = value;
+        return;
+      }
 
       const replacements: PhrasingContent[] = [];
       let cursor = 0;
-      for (const match of node.value.matchAll(wikiTokenPattern)) {
+      for (const match of value.matchAll(wikiTokenPattern)) {
         const start = match.index;
         if (start > cursor) {
-          replacements.push({ type: "text", value: node.value.slice(cursor, start) });
+          replacements.push({ type: "text", value: value.slice(cursor, start) });
         }
         replacements.push(createWikiLink(match[2], Boolean(match[1])));
         cursor = start + match[0].length;
       }
 
       if (cursor === 0) return;
-      if (cursor < node.value.length) {
-        replacements.push({ type: "text", value: node.value.slice(cursor) });
+      if (cursor < value.length) {
+        replacements.push({ type: "text", value: value.slice(cursor) });
       }
 
       parent.children.splice(index, 1, ...replacements);
       return index + replacements.length;
+    });
+
+    visit(tree, "inlineCode", (node) => {
+      node.value = node.value.replaceAll(wikiAliasPipeSentinel, "|");
+    });
+    visit(tree, "code", (node) => {
+      node.value = node.value.replaceAll(wikiAliasPipeSentinel, "|");
     });
   };
 }
@@ -169,88 +191,77 @@ function resolveWikiDocument(
   return null;
 }
 
-function headingSlug(value: string) {
-  return decodeURIComponent(value)
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{Letter}\p{Number}\s-]/gu, "")
-    .replace(/\s+/g, "-");
-}
-
 export function MarkdownReader({
-  body,
   currentDocument,
   documents,
   onSelectDocument,
 }: MarkdownReaderProps) {
-  const components = useMemo<Components>(
-    () => ({
-      a({ children, href }) {
-        const wikiLink = parseWikiHref(href);
-        if (wikiLink) {
-          const linkedDocument = resolveWikiDocument(
-            wikiLink.target,
-            currentDocument,
-            documents,
-          );
-          if (!linkedDocument) {
-            return (
-              <span
-                className={`wiki-link wiki-link-unresolved${wikiLink.embedded ? " wiki-embed" : ""}`}
-                title={`Vault reference: ${wikiLink.target}`}
-              >
-                {children}
-              </span>
-            );
-          }
-
-          const anchor = wikiLink.target.includes("#")
-            ? wikiLink.target.slice(wikiLink.target.indexOf("#") + 1)
-            : "";
+  const components: Components = {
+    a({ children, href }) {
+      const wikiLink = parseWikiHref(href);
+      if (wikiLink) {
+        const linkedDocument = resolveWikiDocument(
+          wikiLink.target,
+          currentDocument,
+          documents,
+        );
+        if (!linkedDocument) {
           return (
-            <button
-              className={`wiki-link${wikiLink.embedded ? " wiki-embed" : ""}`}
-              onClick={() => {
-                onSelectDocument(linkedDocument);
-                if (anchor) {
-                  window.setTimeout(() => {
-                    document.getElementById(headingSlug(anchor))?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    });
-                  }, 0);
-                }
-              }}
-              title={`Open ${linkedDocument.title}`}
-              type="button"
+            <span
+              className={`wiki-link wiki-link-unresolved${wikiLink.embedded ? " wiki-embed" : ""}`}
+              title={`Vault reference: ${wikiLink.target}`}
             >
               {children}
-            </button>
+            </span>
           );
         }
 
-        const external = /^https?:\/\//i.test(href ?? "");
+        const anchor = wikiLink.target.includes("#")
+          ? wikiLink.target.slice(wikiLink.target.indexOf("#") + 1)
+          : "";
+        const anchorId = anchor ? slug(anchor) : "";
         return (
-          <a
-            href={href}
-            rel={external ? "noreferrer" : undefined}
-            target={external ? "_blank" : undefined}
+          <button
+            className={`wiki-link${wikiLink.embedded ? " wiki-embed" : ""}`}
+            onClick={() => {
+              onSelectDocument(linkedDocument);
+              if (anchorId) {
+                window.setTimeout(() => {
+                  document.getElementById(anchorId)?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }, 0);
+              }
+            }}
+            title={`Open ${linkedDocument.title}`}
+            type="button"
           >
             {children}
-            {external && <span aria-hidden="true"> ↗</span>}
-          </a>
+          </button>
         );
-      },
-      table({ children }) {
-        return (
-          <div className="markdown-table-wrap">
-            <table className="markdown-table">{children}</table>
-          </div>
-        );
-      },
-    }),
-    [currentDocument, documents, onSelectDocument],
-  );
+      }
+
+      const external = /^https?:\/\//i.test(href ?? "");
+      return (
+        <a
+          href={href}
+          rel={external ? "noreferrer" : undefined}
+          target={external ? "_blank" : undefined}
+        >
+          {children}
+          {external && <span aria-hidden="true"> ↗</span>}
+        </a>
+      );
+    },
+    table({ children }) {
+      return (
+        <div className="markdown-table-wrap">
+          <table className="markdown-table">{children}</table>
+        </div>
+      );
+    },
+  };
 
   return (
     <div className="markdown-body">
@@ -260,7 +271,7 @@ export function MarkdownReader({
         remarkPlugins={[remarkGfm, remarkReaderConventions, remarkWikiLinks]}
         skipHtml
       >
-        {body}
+        {protectWikiAliasPipes(currentDocument.body)}
       </ReactMarkdown>
     </div>
   );

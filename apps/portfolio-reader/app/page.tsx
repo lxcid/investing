@@ -581,7 +581,6 @@ function CompanyView({
           </div>
           <p className="document-summary">{selectedDocument.summary}</p>
           <MarkdownReader
-            body={selectedDocument.body}
             currentDocument={selectedDocument}
             documents={company.documents}
             onSelectDocument={onSelectDocument}
