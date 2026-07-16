@@ -1,11 +1,16 @@
 "use client";
 
+import {
+  type WikiEmbed,
+  type WikiLink,
+  type WikiReference,
+  wikilinkHandlers,
+} from "@lxcid/remark-wikilink";
+import remarkGfmWithWikilink from "@lxcid/remark-wikilink/gfm";
 import { slug } from "github-slugger";
 import type { Blockquote, Root } from "mdast";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeSlug from "rehype-slug";
-import remarkWikiLink from "@flowershow/remark-wiki-link";
-import remarkGfm from "remark-gfm";
 import { visit } from "unist-util-visit";
 
 export type MarkdownDocument = {
@@ -54,39 +59,17 @@ function wikiLabel(target: string) {
 function remarkReaderWikiPresentation() {
   return (tree: Root) => {
     visit(tree, (node) => {
-      const wikiNode = node as unknown as {
-        type: string;
-        value: string;
-        data?: {
-          alias?: string;
-          hChildren?: Array<{ type: "text"; value: string }>;
-        };
-      };
-      if (wikiNode.type !== "wikiLink" && wikiNode.type !== "embed") return;
-      if (!wikiNode.data) return;
-
-      const label = wikiNode.data.alias || wikiLabel(wikiNode.value);
-      wikiNode.data.hChildren = [
-        {
-          type: "text",
-          value: wikiNode.type === "embed" ? `Embedded reference: ${label}` : label,
-        },
-      ];
+      if (node.type !== "wikiLink" && node.type !== "wikiEmbed") return;
+      const wikiNode = node as WikiLink | WikiEmbed;
+      const label = wikiNode.alias || wikiLabel(wikiNode.target);
+      wikiNode.alias =
+        wikiNode.type === "wikiEmbed" ? `Embedded reference: ${label}` : label;
     });
   };
 }
 
-function wikiUrlResolver({
-  filePath,
-  heading,
-  isEmbed,
-}: {
-  filePath: string;
-  heading: string;
-  isEmbed: boolean;
-}) {
-  const target = `${filePath}${heading ? `#${heading}` : ""}`;
-  return `${isEmbed ? wikiEmbedPrefix : wikiLinkPrefix}${encodeURIComponent(target)}`;
+function wikiUrlResolver({ target, embed }: WikiReference) {
+  return `${embed ? wikiEmbedPrefix : wikiLinkPrefix}${encodeURIComponent(target)}`;
 }
 
 function setCalloutProperties(node: Blockquote, calloutType: string) {
@@ -169,10 +152,8 @@ export function MarkdownReader({
   onSelectDocument,
 }: MarkdownReaderProps) {
   const components: Components = {
-    a({ children, href, node }) {
-      const embeddedHref =
-        typeof node?.properties.src === "string" ? node.properties.src : undefined;
-      const wikiLink = parseWikiHref(href ?? embeddedHref);
+    a({ children, href }) {
+      const wikiLink = parseWikiHref(href);
       if (wikiLink) {
         const linkedDocument = resolveWikiDocument(
           wikiLink.target,
@@ -242,15 +223,11 @@ export function MarkdownReader({
       <ReactMarkdown
         components={components}
         rehypePlugins={[rehypeSlug]}
+        remarkRehypeOptions={{
+          handlers: wikilinkHandlers({ resolveHref: wikiUrlResolver }),
+        }}
         remarkPlugins={[
-          [
-            remarkWikiLink,
-            {
-              files: documents.map((document) => document.path),
-              urlResolver: wikiUrlResolver,
-            },
-          ],
-          remarkGfm,
+          remarkGfmWithWikilink,
           remarkReaderConventions,
           remarkReaderWikiPresentation,
         ]}

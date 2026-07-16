@@ -4,16 +4,13 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  micromark-extension-gfm-table@2.1.1: 84479aa328243115e808d0e652696efd0031900540d77cb454a86085aeea8f62
-
 importers:
 
   .:
     dependencies:
-      '@flowershow/remark-wiki-link':
-        specifier: 3.3.1
-        version: 3.3.1
+      '@lxcid/remark-wikilink':
+        specifier: 0.1.1
+        version: 0.1.1
       github-slugger:
         specifier: 2.0.0
         version: 2.0.0
@@ -32,9 +29,6 @@ importers:
       rehype-slug:
         specifier: 6.0.0
         version: 6.0.0
-      remark-gfm:
-        specifier: 4.0.1
-        version: 4.0.1
       unist-util-visit:
         specifier: 5.1.0
         version: 5.1.0
@@ -588,9 +582,6 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@flowershow/remark-wiki-link@3.3.1':
-    resolution: {integrity: sha512-kIIbGXZigPU+X3pRn9tgrrnbVAwXi1a6gT9G4NcohJF0+WiReBPOaxa4d7G75+wfXdvw+8dkMUfn1m68qQuPKg==}
-
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
     engines: {node: '>=18.18.0'}
@@ -785,6 +776,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@lxcid/remark-wikilink@0.1.1':
+    resolution: {integrity: sha512-0Ger5X7uAfGhPtXDMd06Ail4uqeztlR/OKebd5QWEBPYnkpVx8zujWhqW2iGnk/TxhSLokcKxvLcDkqV3Db7nA==}
+    engines: {node: '>=24'}
 
   '@napi-rs/wasm-runtime@1.1.6':
     resolution: {integrity: sha512-ZLv/JdUfkvOy9eCnnBaGfiO+XimbjebAeO+MRQqD/B+FR1tnRN0tpKSJHRbE8sFfS6aqsXZ67TQjfwfsxULVbg==}
@@ -3853,12 +3848,6 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@flowershow/remark-wiki-link@3.3.1':
-    dependencies:
-      github-slugger: 2.0.0
-      mdast-util-to-markdown: 2.1.2
-      micromark-util-symbol: 2.0.1
-
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -3999,6 +3988,25 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lxcid/remark-wikilink@0.1.1':
+    dependencies:
+      '@types/hast': 3.0.5
+      '@types/mdast': 4.0.4
+      devlop: 1.1.0
+      mdast-util-from-markdown: 2.0.3
+      mdast-util-to-hast: 13.2.1
+      mdast-util-to-markdown: 2.1.2
+      micromark-factory-space: 2.0.1
+      micromark-util-character: 2.1.1
+      micromark-util-symbol: 2.0.1
+      micromark-util-types: 2.0.2
+      remark-gfm: 4.0.1
+      remark-parse: 11.0.0
+      remark-stringify: 11.0.0
+      unified: 11.0.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@napi-rs/wasm-runtime@1.1.6(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
@@ -6000,7 +6008,7 @@ snapshots:
       micromark-util-symbol: 2.0.1
       micromark-util-types: 2.0.2
 
-  micromark-extension-gfm-table@2.1.1(patch_hash=84479aa328243115e808d0e652696efd0031900540d77cb454a86085aeea8f62):
+  micromark-extension-gfm-table@2.1.1:
     dependencies:
       devlop: 1.1.0
       micromark-factory-space: 2.0.1
@@ -6025,7 +6033,7 @@ snapshots:
       micromark-extension-gfm-autolink-literal: 2.1.0
       micromark-extension-gfm-footnote: 2.1.0
       micromark-extension-gfm-strikethrough: 2.1.0
-      micromark-extension-gfm-table: 2.1.1(patch_hash=84479aa328243115e808d0e652696efd0031900540d77cb454a86085aeea8f62)
+      micromark-extension-gfm-table: 2.1.1
       micromark-extension-gfm-tagfilter: 2.0.0
       micromark-extension-gfm-task-list-item: 2.1.0
       micromark-util-combine-extensions: 2.0.1
