@@ -4,4 +4,4 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 minimumReleaseAgeExclude:
-  - '@lxcid/remark-wikilink@0.1.1'
+  - '@lxcid/remark-wikilink@0.2.0'
