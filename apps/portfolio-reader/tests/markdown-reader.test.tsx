@@ -107,6 +107,35 @@ Literal syntax: \`[[target|alias]]\`.`;
   assert.match(html, /<code>\[\[target\|alias\]\]<\/code>/);
 });
 
+test("recognizes wiki links before GFM decides table cell boundaries", () => {
+  const body = `# Parser ordering
+
+| [[questions|Question register]] | Status |
+|---|---|
+| [[questions#Open|Open questions]] | Ready |
+| ![[questions#Open|Embedded questions]] | Included |
+| [[unfinished | Ordinary GFM fallback |`;
+
+  const html = renderToStaticMarkup(
+    <MarkdownReader
+      currentDocument={{ ...documents[0], body }}
+      documents={documents}
+      onSelectDocument={() => {}}
+    />,
+  );
+  const tableBody = html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? "";
+  const bodyRows = [...tableBody.matchAll(/<tr>([\s\S]*?)<\/tr>/g)];
+
+  assert.equal(bodyRows.length, 3);
+  assert.ok(bodyRows.every(([, row]) => (row.match(/<td>/g) ?? []).length === 2));
+  assert.match(html, />Question register<\/button>/);
+  assert.match(html, />Open questions<\/button>/);
+  assert.match(html, />Embedded reference: Embedded questions<\/button>/);
+  assert.match(html, /\[\[unfinished/);
+  assert.match(html, /Ordinary GFM fallback/);
+  assert.doesNotMatch(html, /\uE000/);
+});
+
 test("uses github-slugger semantics and labels anchor-only wiki links", () => {
   const body = `## Cash / debt
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { slug } from "github-slugger";
-import type { Blockquote, Link, PhrasingContent, Root } from "mdast";
+import type { Blockquote, Root } from "mdast";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeSlug from "rehype-slug";
+import remarkWikiLink from "@flowershow/remark-wiki-link";
 import remarkGfm from "remark-gfm";
 import { visit } from "unist-util-visit";
 
@@ -24,8 +25,6 @@ type MarkdownReaderProps = {
   onSelectDocument: (document: MarkdownDocument) => void;
 };
 
-const wikiTokenPattern = /(!)?\[\[([^\]\n]+)\]\]/g;
-const wikiAliasPipeSentinel = "\uE000";
 const wikiLinkPrefix = "#vault-link=";
 const wikiEmbedPrefix = "#vault-embed=";
 
@@ -51,70 +50,43 @@ function wikiLabel(target: string) {
   return pathLabel || anchor || target;
 }
 
-function createWikiLink(rawValue: string, embedded: boolean): Link {
-  const separator = rawValue.indexOf("|");
-  const target = (separator === -1 ? rawValue : rawValue.slice(0, separator)).trim();
-  const alias = separator === -1 ? "" : rawValue.slice(separator + 1).trim();
-  const label = alias || wikiLabel(target);
-
-  return {
-    type: "link",
-    url: `${embedded ? wikiEmbedPrefix : wikiLinkPrefix}${encodeURIComponent(target)}`,
-    title: target,
-    children: [
-      {
-        type: "text",
-        value: embedded ? `Embedded reference: ${label}` : label,
-      },
-    ],
-  };
-}
-
-/** Hide wiki alias pipes until remark-gfm has finished tokenizing tables. */
-function protectWikiAliasPipes(value: string) {
-  return value.replace(wikiTokenPattern, (token) =>
-    token.replaceAll("|", wikiAliasPipeSentinel),
-  );
-}
-
-/** Convert Obsidian wiki syntax in text nodes into ordinary mdast links. */
-function remarkWikiLinks() {
+/** Preserve the reader's preferred labels after the wiki parser builds mdast. */
+function remarkReaderWikiPresentation() {
   return (tree: Root) => {
-    visit(tree, "text", (node, index, parent) => {
-      if (index == null || !parent) return;
-      const value = node.value.replaceAll(wikiAliasPipeSentinel, "|");
-      if (!value.includes("[[")) {
-        node.value = value;
-        return;
-      }
+    visit(tree, (node) => {
+      const wikiNode = node as unknown as {
+        type: string;
+        value: string;
+        data?: {
+          alias?: string;
+          hChildren?: Array<{ type: "text"; value: string }>;
+        };
+      };
+      if (wikiNode.type !== "wikiLink" && wikiNode.type !== "embed") return;
+      if (!wikiNode.data) return;
 
-      const replacements: PhrasingContent[] = [];
-      let cursor = 0;
-      for (const match of value.matchAll(wikiTokenPattern)) {
-        const start = match.index;
-        if (start > cursor) {
-          replacements.push({ type: "text", value: value.slice(cursor, start) });
-        }
-        replacements.push(createWikiLink(match[2], Boolean(match[1])));
-        cursor = start + match[0].length;
-      }
-
-      if (cursor === 0) return;
-      if (cursor < value.length) {
-        replacements.push({ type: "text", value: value.slice(cursor) });
-      }
-
-      parent.children.splice(index, 1, ...replacements);
-      return index + replacements.length;
-    });
-
-    visit(tree, "inlineCode", (node) => {
-      node.value = node.value.replaceAll(wikiAliasPipeSentinel, "|");
-    });
-    visit(tree, "code", (node) => {
-      node.value = node.value.replaceAll(wikiAliasPipeSentinel, "|");
+      const label = wikiNode.data.alias || wikiLabel(wikiNode.value);
+      wikiNode.data.hChildren = [
+        {
+          type: "text",
+          value: wikiNode.type === "embed" ? `Embedded reference: ${label}` : label,
+        },
+      ];
     });
   };
+}
+
+function wikiUrlResolver({
+  filePath,
+  heading,
+  isEmbed,
+}: {
+  filePath: string;
+  heading: string;
+  isEmbed: boolean;
+}) {
+  const target = `${filePath}${heading ? `#${heading}` : ""}`;
+  return `${isEmbed ? wikiEmbedPrefix : wikiLinkPrefix}${encodeURIComponent(target)}`;
 }
 
 function setCalloutProperties(node: Blockquote, calloutType: string) {
@@ -197,8 +169,10 @@ export function MarkdownReader({
   onSelectDocument,
 }: MarkdownReaderProps) {
   const components: Components = {
-    a({ children, href }) {
-      const wikiLink = parseWikiHref(href);
+    a({ children, href, node }) {
+      const embeddedHref =
+        typeof node?.properties.src === "string" ? node.properties.src : undefined;
+      const wikiLink = parseWikiHref(href ?? embeddedHref);
       if (wikiLink) {
         const linkedDocument = resolveWikiDocument(
           wikiLink.target,
@@ -268,10 +242,21 @@ export function MarkdownReader({
       <ReactMarkdown
         components={components}
         rehypePlugins={[rehypeSlug]}
-        remarkPlugins={[remarkGfm, remarkReaderConventions, remarkWikiLinks]}
+        remarkPlugins={[
+          [
+            remarkWikiLink,
+            {
+              files: documents.map((document) => document.path),
+              urlResolver: wikiUrlResolver,
+            },
+          ],
+          remarkGfm,
+          remarkReaderConventions,
+          remarkReaderWikiPresentation,
+        ]}
         skipHtml
       >
-        {protectWikiAliasPipes(currentDocument.body)}
+        {currentDocument.body}
       </ReactMarkdown>
     </div>
   );
